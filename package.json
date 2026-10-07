@@ -1,0 +1,29 @@
+{
+  "name": "hrx-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HRX - Enterprise-Grade AI-Powered Employee Management & HR Platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:shared": "npm run build -w packages/shared",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "seed": "npm run seed -w apps/api",
+    "test": "npm run test -w apps/api",
+    "test:all": "npm test --workspaces"
+  },
+  "keywords": [
+    "hr",
+    "hrms",
+    "enterprise",
+    "react",
+    "express",
+    "mongodb"
+  ],
+  "author": "HRX Team",
+  "license": "MIT"
+}

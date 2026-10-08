@@ -7,6 +7,9 @@ import { DashboardPage } from '../pages/DashboardPage';
 import { EmployeesPage } from '../pages/EmployeesPage';
 import { EmployeeDetailPage } from '../pages/EmployeeDetailPage';
 import { DepartmentsPage } from '../pages/DepartmentsPage';
+import { AttendancePage } from '../pages/AttendancePage';
+import { LeavePage } from '../pages/LeavePage';
+import { SettingsPage } from '../pages/SettingsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { Permission } from '@hrx/shared';
 import { ShieldAlert } from 'lucide-react';
@@ -68,6 +71,8 @@ export const AppRoutes: React.FC = () => {
       >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/attendance" element={<AttendancePage />} />
+        <Route path="/leave" element={<LeavePage />} />
         <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/employees/:id" element={<EmployeeDetailPage />} />
         <Route
@@ -75,6 +80,14 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute requiredPermission={Permission.DEPARTMENTS_READ}>
               <DepartmentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute requiredPermission={Permission.SETTINGS_MANAGE}>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Menu, Bell, User as UserIcon } from 'lucide-react';
+import { Menu, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { NotificationCenter } from './NotificationCenter';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -25,15 +26,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, title = 'HR Man
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Notification Bell */}
-        <button
-          id="btn-notifications"
-          className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
-          aria-label="View notifications"
-        >
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-500 ring-2 ring-slate-950" />
-        </button>
+        {/* Notification Bell Center */}
+        <NotificationCenter />
 
         {/* User Mini Profile */}
         {user && (

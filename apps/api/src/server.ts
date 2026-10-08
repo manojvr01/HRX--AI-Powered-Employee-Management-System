@@ -1,14 +1,19 @@
+import http from 'http';
 import { app } from './app.js';
 import { env } from './config/env.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
+import { initSocketServer } from './sockets/socketManager.js';
 import { logger } from './utils/logger.js';
 
 async function bootstrap() {
   try {
     await connectDatabase();
 
-    const server = app.listen(env.PORT, () => {
-      logger.info(`🚀 HRX API server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
+    const server = http.createServer(app);
+    initSocketServer(server);
+
+    server.listen(env.PORT, () => {
+      logger.info(`🚀 HRX API & Socket.IO server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
       logger.info(`🔗 Base URL: http://localhost:${env.PORT}`);
     });
 

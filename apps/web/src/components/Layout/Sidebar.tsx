@@ -7,6 +7,9 @@ import {
   UserCheck,
   LogOut,
   Sparkles,
+  CalendarCheck,
+  Palmtree,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Permission, UserRole } from '@hrx/shared';
@@ -24,7 +27,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       label: 'Dashboard',
       to: '/dashboard',
       icon: LayoutDashboard,
-      show: true, // Everyone has dashboard
+      show: true,
+    },
+    {
+      label: 'Attendance',
+      to: '/attendance',
+      icon: CalendarCheck,
+      show: true,
+    },
+    {
+      label: 'Leave',
+      to: '/leave',
+      icon: Palmtree,
+      show: true,
     },
     {
       label: user?.role === UserRole.MANAGER ? 'My Team' : 'Employees',
@@ -37,6 +52,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       to: '/departments',
       icon: Building2,
       show: can(Permission.DEPARTMENTS_READ),
+    },
+    {
+      label: 'Settings',
+      to: '/settings',
+      icon: Settings,
+      show: user?.role === UserRole.ADMIN || can(Permission.SETTINGS_MANAGE),
     },
     {
       label: 'My Profile',

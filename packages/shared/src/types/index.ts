@@ -238,6 +238,17 @@ export interface IOrgSettings {
   updatedAt?: string;
 }
 
+export interface IHoliday {
+  _id: string;
+  name: string;
+  date: string; // YYYY-MM-DD
+  year: number;
+  isOptional: boolean;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface IRefreshSession {
   _id: string;
   userId: string;

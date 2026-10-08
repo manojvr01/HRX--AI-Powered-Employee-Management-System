@@ -3,12 +3,70 @@
 ## Status Overview
 - **Phase 1: Foundation (P0)**: ✅ Complete & Verified
 - **Phase 2: Employees, Departments, Dashboards (P0)**: ✅ Complete & Verified
-- **Automated Test Suite**: 25/25 Passing Tests across all suites
-- **E2E Browser Validation**: Complete multi-role check & CRUD verified
+- **Phase 3: Attendance, Leave, Real-Time Notifications (P0)**: ✅ Complete & Verified
+- **Automated Test Suite**: 33/33 Passing Tests across 5 test suites
+- **E2E Browser Validation**: Complete multi-role check & Socket.IO real-time delivery verified
 
 ---
 
 ## 1. Implemented Capabilities & Modules
+
+### Phase 3: Attendance, Leave & Real-Time Notifications
+- **Attendance Module**:
+  - `POST /attendance/check-in`: Validates only one record per calendar day, late grace threshold checking (based on OrgSettings), and notes capture.
+  - `POST /attendance/check-out`: Rejects check-out without prior check-in; computes duration in minutes across timezone boundaries; marks `HALF_DAY` if duration < 4 hours.
+  - `GET /attendance`: Scoped history (Employee sees self, Manager sees direct reports + self, HR/Admin sees all).
+  - `GET /attendance/summary`: Monthly metrics (Days present, late days, half days, total hours worked).
+- **Holidays & Org Settings (Admin)**:
+  - `GET /settings/org` & `PATCH /settings/org`: Updates company timezone (`Asia/Kolkata`), work week days, daily working hours, late threshold.
+  - `GET /settings/holidays`, `POST /settings/holidays`, `DELETE /settings/holidays/:id`: CRUD for official organization holidays with mandatory/optional tags.
+- **Leave Management & Workday Engine**:
+  - `calculateWorkingDays`: Excludes weekend days (per OrgSettings) and official calendar holidays.
+  - `POST /leave`: Overlap prevention (rejects overlapping pending or approved leave), balance sufficiency validation, atomic pending-day reservation.
+  - `PATCH /leave/:id/approve`: Atomic balance deduction on approval (`usedDays += daysCount`, `pendingDays -= daysCount`). Scoped so Managers can only approve direct reports.
+  - `PATCH /leave/:id/reject`: Refunds reserved pending balance; captures rejection rationale.
+  - `PATCH /leave/:id/cancel`: Employees can cancel their pending applications with balance refund.
+  - `GET /leave/balances`: Fetches yearly balances across Annual, Sick, and Casual leaves.
+- **Real-Time Notification Service & Socket.IO**:
+  - Authenticated Socket.IO handshake using JWT Bearer token.
+  - Automatic room join: `user:${userId}` and `role:${role}`.
+  - DB persistence (`Notification` collection) + targeted live emission (`notification:new`).
+  - Frontend Notification Center bell popover with unread counter, live toast overlays, mark as read, and mark all as read.
+
+---
+
+## 2. Test Execution Results
+
+```text
+ ✓ tests/attendance_leave_notifications.test.ts (8 tests)
+ ✓ tests/employee_department.test.ts (11 tests)
+ ✓ tests/auth.test.ts (6 tests)
+ ✓ tests/security.test.ts (3 tests)
+ ✓ tests/rbac.test.ts (5 tests)
+
+ Test Files  5 passed (5)
+      Tests  33 passed (33)
+   Duration  25.60s
+```
+
+### Verified Phase 3 Test Cases:
+1. `Records check-in with correct status and enforces one record per day`
+2. `Rejects checkout before check-in (404 / 400 Bad Request)`
+3. `Computes attendance duration across timezone boundaries and half-day status`
+4. `Calculates working days excluding weekends and official organization holidays`
+5. `Rejects leave request if balance is insufficient (400 Bad Request)`
+6. `Applies for leave, deducts pending balance, and prevents overlapping requests`
+7. `Manager cannot approve leave for non-reports (Forbidden 403)`
+8. `Notification is persisted and delivered only to the target user`
+
+---
+
+## 3. End-to-End Browser Check Results
+- **Employee Check-In**: Employee logged in, clicked "Check In", status updated to "Checked In" with live clock.
+- **Leave Application**: Applied for 3 working days of Annual Paid Leave (`2026-11-02` to `2026-11-04`). Verified pending balance reservation.
+- **HR Approval**: HR logged in, reviewed request under "Approvals" tab, and approved.
+- **Atomic Balance Deduction**: Employee logged back in, confirmed Annual Leave balance updated to 17 remaining (3 used).
+- **Socket.IO Real-Time Notification**: Notification bell indicator incremented; popover displayed *"Leave Request Approved: Your leave request from 2026-11-02 to 2026-11-04 (3 days) has been approved."*
 
 ### Monorepo Scaffold & Tooling
 - **Workspaces**: Root npm workspaces (`packages/*`, `apps/*`).

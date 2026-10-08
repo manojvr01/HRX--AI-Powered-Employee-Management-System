@@ -12,3 +12,4 @@ export * from './Notification.js';
 export * from './AuditLog.js';
 export * from './OrgSettings.js';
 export * from './RefreshSession.js';
+export * from './Holiday.js';

@@ -11,6 +11,10 @@ import { healthRoutes } from './modules/health/healthRoutes.js';
 import { departmentRoutes } from './modules/departments/departmentRoutes.js';
 import { employeeRoutes } from './modules/employees/employeeRoutes.js';
 import { dashboardRoutes } from './modules/dashboard/dashboardRoutes.js';
+import { attendanceRoutes } from './modules/attendance/attendanceRoutes.js';
+import { leaveRoutes } from './modules/leave/leaveRoutes.js';
+import { settingsRoutes } from './modules/settings/settingsRoutes.js';
+import { notificationRoutes } from './modules/notifications/notificationRoutes.js';
 import { NotFoundError } from './utils/errors.js';
 
 export const app = express();
@@ -47,6 +51,11 @@ app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/attendance', attendanceRoutes);
+app.use('/api/v1/leaves', leaveRoutes);
+app.use('/api/v1/leave', leaveRoutes);
+app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // 404 Catch-all handler
 app.use((req, res, next) => {

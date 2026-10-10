@@ -1,0 +1,474 @@
+HRX Product Requirements Document (PRD)
+Version 1.0 | Status: Draft, ready for build | Product: HRX, an AI-assisted employee management and HR platform
+1. Overview
+HRX is a role-based web application that centralizes employee records, attendance, leave, payroll records, documents, performance reviews, notifications, analytics, reports and bounded AI assistance for small and medium organizations. It is built as a deployable, portfolio-grade system: realistic enterprise behavior, understandable architecture, one developer.
+Stack decisions (fixed): React + TypeScript + Vite (web), Node.js + Express 5 + Mongoose (API), MongoDB Atlas, Cloudinary (files), Google Gemini (AI, behind a provider abstraction), Socket.IO (real-time), deployed to Vercel (web) and Render (API).
+2. Problem statement
+Small and medium organizations manage employee data, attendance, leave, documents, payroll records and performance information across disconnected spreadsheets, shared folders, email and manual approvals. This causes duplicated data, slow approvals, weak access control, no audit trail, and no consolidated view for decision-making.
+HRX replaces this with one system that has role-based access, an audit trail, real-time notifications, role-specific dashboards, and AI help that is explicitly advisory.
+3. Goals and non-goals
+Goals
+1. Give each role a single place to do its HR work with the minimum number of clicks.
+2. Enforce data access on the server so employees can only see their own sensitive data and managers only their direct reports.
+3. Make approvals (leave) and reviews (performance) visible in real time to the people affected.
+4. Provide trustworthy reporting and analytics scoped by role.
+5. Provide AI assistance that is useful, grounded in company policy, and cannot bypass permissions.
+6. Ship a deployable, tested, documented system.
+Non-goals
+• Statutory payroll, tax, PF/ESI or other compliance calculation. Payroll is a management/demo module.
+• Recruitment, applicant tracking, onboarding workflows, expense claims, shift scheduling.
+• Biometric, QR or GPS attendance (future extension only).
+• Mobile native apps (the web app is responsive).
+• Multi-tenant SaaS billing. HRX serves one organization per deployment.
+• Automated employment decisions of any kind.
+4. Users and personas
+Role
+Who
+Primary needs
+ADMIN
+Company/platform administrator
+Configure the system, manage users and roles, see audit logs, full visibility
+HR
+HR operations
+Manage employees, attendance, leave approvals, payroll records, documents, reviews, reports
+MANAGER
+Team lead
+See team attendance, approve team leave, write reviews for direct reports, team analytics
+EMPLOYEE
+Individual contributor
+Check in/out, apply for leave, view own payslips, documents and reviews, ask the AI assistant
+Permission summary
+Area
+ADMIN
+HR
+MANAGER
+EMPLOYEE
+Users and roles
+Full
+Create/deactivate non-admin
+None
+None
+Employees
+Full
+Full (not ADMIN accounts)
+Read direct reports
+Read own, edit limited fields
+Departments
+Manage
+Manage
+Read
+Read
+Attendance
+All
+All
+Team read
+Own
+Leave
+All, approve
+All, approve
+Approve direct reports
+Own
+Payroll
+All
+All
+None
+Own read
+Documents
+All
+All
+Own only
+Own, limited categories
+Performance
+All
+All
+Direct reports
+Own finalized
+Reports
+All
+All
+Team scope
+None
+Audit logs, settings
+Full
+None
+None
+None
+Policies
+Manage
+Manage
+Read
+Read
+5. Scope and priorities
+• P0 (must work): auth, RBAC, employees, departments, role dashboards, attendance, leave, notifications.
+• P1 (should work): payroll, documents, performance reviews, AI assistant and summaries, CSV reports, analytics, audit logs, announcements.
+• P2 (if time allows): XLSX and PDF exports, forgot/reset password, bulk import, 3D accents, command palette, leave calendar polish.
+6. Functional requirements
+6.1 Authentication and session
+ID
+Requirement
+Priority
+FR-AUTH-1
+Users log in with email and password.
+P0
+FR-AUTH-2
+Short-lived access token held in memory; refresh token in an HttpOnly Secure cookie, rotated on every use, with reuse detection that revokes the session.
+P0
+FR-AUTH-3
+Logout revokes the refresh session.
+P0
+FR-AUTH-4
+No public registration. ADMIN/HR create users with a temporary password and forced change on first login.
+P0
+FR-AUTH-5
+Deactivating a user blocks login and revokes all sessions.
+P0
+FR-AUTH-6
+Login rate limiting with progressive lockout.
+P0
+FR-AUTH-7
+Forgot and reset password.
+P2
+6.2 Authorization
+ID
+Requirement
+Priority
+FR-RBAC-1
+Four roles enforced on the backend for every protected endpoint.
+P0
+FR-RBAC-2
+A single permission map is shared by API and web; the web uses it only for navigation and route guards.
+P0
+FR-RBAC-3
+MANAGER access is scoped to direct reports.
+P0
+FR-RBAC-4
+Any client-supplied employee, user or document id is checked against the caller's scope.
+P0
+6.3 Employees and departments
+ID
+Requirement
+Priority
+FR-EMP-1
+Create, view, edit and deactivate employees; soft delete only.
+P0
+FR-EMP-2
+Auto-generated unique employee code.
+P0
+FR-EMP-3
+Profile fields: contact details, department, position, manager, joining date, employment status, emergency contact.
+P0
+FR-EMP-4
+List with debounced search, filters, allowlisted sorting and pagination.
+P0
+FR-EMP-5
+Employee detail page with tabs for profile, attendance, leave, payroll, documents and performance (visible per role).
+P0
+FR-EMP-6
+Employees can edit limited fields of their own profile.
+P0
+FR-EMP-7
+Profile picture upload.
+P1
+FR-EMP-8
+Bulk import.
+P2
+FR-DEPT-1
+Create, edit and deactivate departments with a department head and employee count.
+P0
+FR-DEPT-2
+Department analytics.
+P1
+6.4 Attendance
+ID
+Requirement
+Priority
+FR-ATT-1
+Check-in and check-out; one record per employee per work date.
+P0
+FR-ATT-2
+Duplicate check-in and check-out before check-in are rejected.
+P0
+FR-ATT-3
+Working duration and lateness computed on the server using the organization timezone.
+P0
+FR-ATT-4
+Own history and monthly summary for employees; team view for managers; all-employee view for HR/ADMIN.
+P0
+FR-ATT-5
+Holidays and approved leave days are recognized; check-in on such days is allowed but flagged.
+P0
+FR-ATT-6
+Configurable late threshold, work week and standard hours.
+P0
+6.5 Leave
+ID
+Requirement
+Priority
+FR-LV-1
+Leave types and per-employee yearly balances.
+P0
+FR-LV-2
+Apply for leave with date validation; working-day count excludes weekends and holidays.
+P0
+FR-LV-3
+Overlapping leave requests are rejected.
+P0
+FR-LV-4
+States: pending, approved, rejected, cancelled.
+P0
+FR-LV-5
+HR or the employee's manager approves or rejects; balance is deducted only on approval, atomically, and insufficient balance is rejected.
+P0
+FR-LV-6
+Employees can cancel their own pending requests.
+P0
+FR-LV-7
+Notifications on submission and decision.
+P0
+FR-LV-8
+Leave history and calendar view.
+P1
+6.6 Notifications and announcements
+ID
+Requirement
+Priority
+FR-NOT-1
+Notifications are persisted with unread count, mark read and mark all read.
+P0
+FR-NOT-2
+Authenticated real-time delivery over Socket.IO with reconnect handling; toast on arrival.
+P0
+FR-NOT-3
+Event types: leave submitted/approved/rejected, document uploaded, review created, payslip available, announcement.
+P0/P1
+FR-NOT-4
+Admin announcements delivered live.
+P1
+6.7 Payroll (management/demo)
+ID
+Requirement
+Priority
+FR-PAY-1
+Salary structure: basic, HRA, allowances, deductions. Gross and net computed on the server.
+P1
+FR-PAY-2
+One payroll record per employee per month; salary history.
+P1
+FR-PAY-3
+Payslip view for the employee; HR/ADMIN manage records.
+P1
+FR-PAY-4
+Payroll summary dashboard for HR/ADMIN.
+P1
+FR-PAY-5
+The module is labelled non-statutory; no tax or PF/ESI compliance is claimed.
+P1
+6.8 Documents
+ID
+Requirement
+Priority
+FR-DOC-1
+Upload with category, metadata and uploader; categories: profile image, identity, offer letter, payslip, resume, certificate, performance attachment, other.
+P1
+FR-DOC-2
+Validation: type allowlist, magic-byte check, size limit, filename sanitization, no executable types.
+P1
+FR-DOC-3
+Files stored privately in Cloudinary; access through short-lived signed URLs after an authorization check.
+P1
+FR-DOC-4
+List, download and delete with audit logging.
+P1
+6.9 Performance management
+ID
+Requirement
+Priority
+FR-PERF-1
+Review cycles and reviews with reviewer, rating categories, goals, strengths, improvement areas, comments and overall rating.
+P1
+FR-PERF-2
+Draft and finalized states; employees see finalized reviews only.
+P1
+FR-PERF-3
+Review history per employee; managers limited to direct reports.
+P1
+FR-PERF-4
+Notification when a review is created.
+P1
+6.10 AI features
+ID
+Requirement
+Priority
+FR-AI-1
+HR assistant answers policy questions only from stored Policy records, with references; if unsupported, it says so and points to HR.
+P1
+FR-AI-2
+The assistant may use the caller's own non-sensitive data when needed; it never exposes another person's data.
+P1
+FR-AI-3
+Performance summary returns validated structured output: summary, strengths, development areas, next steps, notes. It is saved as an editable draft.
+P1
+FR-AI-4
+All AI calls go through a provider interface with timeout, bounded retry, input limits and rate limits; the API key never reaches the browser.
+P1
+FR-AI-5
+Conversation history stored per user.
+P1
+6.11 Reports and analytics
+ID
+Requirement
+Priority
+FR-REP-1
+Employee, attendance, leave, payroll and performance reports with date and department filters, scoped by role.
+P1
+FR-REP-2
+CSV export.
+P1
+FR-REP-3
+XLSX export (formatted) and PDF export (header, date range, timestamp, page numbers).
+P2
+FR-REP-4
+Report exports are audit-logged.
+P1
+FR-ANA-1
+Admin/HR dashboard: headcount, active/inactive, department distribution, attendance rate, leave trends, payroll summary, performance distribution, recent activity.
+P1
+FR-ANA-2
+Employee dashboard: attendance, leave balance, latest payslip, upcoming leave, notifications, performance summary.
+P0/P1
+FR-ANA-3
+Manager dashboard: team size, team attendance, pending team leave, performance distribution, upcoming reviews.
+P1
+6.12 Administration and audit
+ID
+Requirement
+Priority
+FR-ADM-1
+Audit log of logins, role changes, payroll changes, document actions, leave decisions and report exports, viewable by ADMIN.
+P1
+FR-ADM-2
+Organization settings (timezone, late threshold, work week) and holiday management.
+P0
+FR-ADM-3
+Policy management by HR/ADMIN.
+P1
+7. Business rules
+1. One attendance record per employee per work date; a work date is the organization-local calendar date.
+2. Timestamps are stored in UTC and displayed in the organization timezone (default Asia/Kolkata).
+3. Leave balance changes only when a request is approved, and never goes below zero.
+4. An employee cannot have two overlapping active leave requests.
+5. Payroll amounts are computed on the server; clients never submit computed totals.
+6. HR cannot modify ADMIN accounts.
+7. HR records are deactivated, not hard-deleted.
+8. AI output is advisory only and is never used to decide pay, promotion, discipline or termination.
+8. Non-functional requirements
+Area
+Requirement
+Security
+bcrypt hashing; JWT access plus rotating refresh tokens; Helmet; CORS allowlist; rate limiting; Zod validation on every input; NoSQL-operator and mass-assignment protection; private signed file access; audit logging; no secrets in source or logs
+Authorization
+Backend authoritative for every request; IDOR tests for every resource
+Performance
+Paginated lists (max 100); indexed queries; target p95 API latency under 500 ms on seeded data under normal load; route-level code splitting
+Reliability
+Health and readiness endpoints; graceful Socket.IO reconnect; clear errors; no stack traces in production
+Accessibility
+Keyboard navigable, visible focus, AA contrast, meaningful empty/loading/error states
+Responsiveness
+Usable on desktop, tablet and mobile
+Observability
+Structured logs with request ids; log levels; no passwords or tokens logged
+Maintainability
+Modular monorepo; business logic in services; shared Zod schemas and types; OpenAPI generated from schemas
+Testability
+Unit, integration, authorization, component and E2E tests; CI runs lint, typecheck, test and build
+Deployability
+Environment-driven config; documented deployment to Vercel, Render, Atlas, Cloudinary and Gemini
+9. Key user journeys
+1. Onboard an employee: Admin logs in, creates a department, creates an employee with a temporary password; the employee logs in and is forced to change it.
+2. Daily attendance: Employee checks in and out; duration and lateness appear on their history and in the HR view.
+3. Leave lifecycle: Employee applies for leave; manager or HR is notified live, approves; employee receives a live notification and the balance updates.
+4. Performance review: Manager or HR creates a review, generates an AI summary draft, edits and finalizes it; the employee sees the finalized review and is notified.
+5. Policy question: Employee asks the assistant about leave rules and gets a referenced answer; an out-of-scope question gets a refusal that points to HR.
+6. Reporting: HR filters a report by date and department and exports it; the export is audit-logged.
+10. Release acceptance criteria
+• Login, logout, refresh and protected routes work; unauthenticated requests return 401 and wrong-role requests return 403.
+• All four roles are enforced on the backend; employees cannot access another employee's payroll, documents or reviews.
+• Employee CRUD, attendance, leave lifecycle, payroll records, documents and reviews work end to end in the browser.
+• Notifications persist and appear live, including after a reconnect.
+• The AI assistant and summary work through the backend; output is schema-validated; prompt-injection tests do not bypass authorization; no API key appears in the web bundle.
+• Reports export with correct role scoping.
+• Lint, typecheck, all tests and the production build pass; no major console errors.
+• README, architecture, security, deployment, test plan and runbook documents are accurate and known limitations are listed.
+11. Success metrics
+Metric
+Target
+P0 and P1 journeys passing in Playwright
+100%
+Critical authorization tests (IDOR, role, scope)
+100% passing; zero known gaps
+API p95 latency on seeded data
+Under 500 ms
+Lighthouse accessibility score on main pages
+90 or higher
+Clean-clone setup (npm install, seed, run)
+Under 15 minutes following the README
+Open critical or high security findings at release
+0
+12. Risks and mitigations
+Risk
+Mitigation
+Scope too large for one build
+Priority tiers and phased delivery with a verification gate after each phase
+Refresh cookie blocked across Vercel and Render domains
+Proxy /api through Vercel rewrites so the cookie is first-party; document fallbacks
+Authorization gaps (IDOR)
+Central permission map and scoping helpers; negative tests for every resource
+AI hallucinates policy
+Answer only from stored policies; refuse when unsupported; show references
+Prompt injection or data leakage via AI
+Authorization decided in code; minimal data sent to the model; injection tests
+Malicious file upload
+Allowlist, magic-byte check, size limits, private storage, signed URLs
+Render free-tier cold starts affect Socket.IO and first requests
+Document the limitation; reconnect handling; optional paid tier
+Third-party service limits (Gemini, Cloudinary, Atlas free tiers)
+Configurable model and limits; graceful errors; document quotas
+Payroll mistaken for compliant payroll
+Clear non-statutory labelling in UI and docs
+13. Assumptions and dependencies
+• One organization per deployment; a single organization timezone.
+• A Monday to Friday work week is the default and is configurable.
+• Accounts needed for deployment: MongoDB Atlas, Cloudinary, Google AI (Gemini), Render, Vercel, GitHub.
+• Policy content for the assistant is seeded sample data and is replaced by the organization's real policies.
+• Demo credentials exist for development only; the seed script refuses to run in production.
+14. Release plan
+Phase
+Content
+Tier
+1
+Monorepo, database and models, auth, RBAC, seed, app shell
+P0
+2
+Employees, departments, role dashboards
+P0
+3
+Attendance, leave, real-time notifications
+P0
+4
+Payroll and documents
+P1
+5
+Performance reviews and AI
+P1
+6
+Reports, analytics, hardening, deployment configuration, final docs
+P1 then P2
+Each phase ends with passing lint, typecheck, tests and build, a browser check, and an updated project status document.
+15. Out of scope for this release
+Statutory payroll and tax rules, recruitment and onboarding workflows, expense management, shift scheduling, biometric/QR/GPS attendance, native mobile apps, multi-organization tenancy, SSO/SAML, and any automated employment decision.
+16. Open questions
+1. Should managers see attendance and leave only for direct reports, or for the whole reporting chain?
+2. Should employees be allowed to upload their own documents, and in which categories?
+3. Which leave types and yearly allowances should be seeded by default?
+4. Is a custom domain available for production? It would simplify cookie handling and WebSockets.

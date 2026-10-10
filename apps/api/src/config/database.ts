@@ -6,7 +6,7 @@ export async function connectDatabase(): Promise<typeof mongoose> {
   try {
     mongoose.set('strictQuery', true);
     const conn = await mongoose.connect(env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 15000,
       autoIndex: true,
     });
     logger.info({ uri: env.MONGODB_URI.replace(/\/\/.*@/, '//***@') }, 'Connected to MongoDB database');

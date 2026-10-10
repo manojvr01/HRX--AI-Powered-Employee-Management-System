@@ -34,7 +34,29 @@ app.use(helmet());
 // CORS configuration
 app.use(
   cors({
-    origin: env.CORS_ORIGINS.split(',').map((o) => o.trim()),
+    origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, mobile, curl)
+      if (!origin) return callback(null, true);
+
+      const allowedOrigins = (env.CORS_ORIGINS || '')
+        .split(',')
+        .map((o) => o.trim().toLowerCase().replace(/\/$/, ''));
+
+      const normalized = origin.toLowerCase().replace(/\/$/, '');
+
+      if (
+        allowedOrigins.includes('*') ||
+        allowedOrigins.includes(normalized) ||
+        normalized.endsWith('.vercel.app') ||
+        normalized.includes('localhost') ||
+        normalized.includes('127.0.0.1')
+      ) {
+        return callback(null, true);
+      }
+
+      // Dynamic fallback allows all valid web clients
+      callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],

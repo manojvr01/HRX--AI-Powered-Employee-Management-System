@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../lib/api';
 import { Sparkles, Send, X, Bot, User, HelpCircle } from 'lucide-react';
 
@@ -17,6 +18,16 @@ export function AiAssistantModal({ isOpen, onClose }: { isOpen: boolean; onClose
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -58,9 +69,14 @@ export function AiAssistantModal({ isOpen, onClose }: { isOpen: boolean; onClose
     'What is the company policy on workplace ethics?',
   ];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full h-[620px] flex flex-col shadow-2xl overflow-hidden">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full h-[620px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden my-auto">
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -165,6 +181,7 @@ export function AiAssistantModal({ isOpen, onClose }: { isOpen: boolean; onClose
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

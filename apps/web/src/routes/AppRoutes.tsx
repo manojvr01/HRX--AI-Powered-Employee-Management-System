@@ -10,6 +10,12 @@ import { DepartmentsPage } from '../pages/DepartmentsPage';
 import { AttendancePage } from '../pages/AttendancePage';
 import { LeavePage } from '../pages/LeavePage';
 import { SettingsPage } from '../pages/SettingsPage';
+import { PayrollPage } from '../pages/PayrollPage';
+import { DocumentsPage } from '../pages/DocumentsPage';
+import { PerformancePage } from '../pages/PerformancePage';
+import { ReportsAnalyticsPage } from '../pages/ReportsAnalyticsPage';
+import { AnnouncementsPage } from '../pages/AnnouncementsPage';
+import { AuditLogsPage } from '../pages/AuditLogsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { Permission } from '@hrx/shared';
 import { ShieldAlert } from 'lucide-react';
@@ -73,6 +79,15 @@ export const AppRoutes: React.FC = () => {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/leave" element={<LeavePage />} />
+        <Route
+          path="/payroll"
+          element={
+            <ProtectedRoute requiredPermission={Permission.PAYROLL_READ_SELF}>
+              <PayrollPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/employees/:id" element={<EmployeeDetailPage />} />
         <Route
@@ -80,6 +95,17 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute requiredPermission={Permission.DEPARTMENTS_READ}>
               <DepartmentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/performance" element={<PerformancePage />} />
+        <Route path="/reports" element={<ReportsAnalyticsPage />} />
+        <Route path="/announcements" element={<AnnouncementsPage />} />
+        <Route
+          path="/audit-logs"
+          element={
+            <ProtectedRoute requiredPermission={Permission.AUDIT_READ}>
+              <AuditLogsPage />
             </ProtectedRoute>
           }
         />

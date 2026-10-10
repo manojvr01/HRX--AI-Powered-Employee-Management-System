@@ -10,8 +10,11 @@ import {
   LeaveBalance,
   OrgSettings,
   RefreshSession,
+  Policy,
+  Announcement,
+  PerformanceReview,
 } from '../models/index.js';
-import { UserRole, UserStatus, EmployeeStatus } from '@hrx/shared';
+import { UserRole, UserStatus, EmployeeStatus, PerformanceReviewStatus } from '@hrx/shared';
 
 export async function runSeed(isTest = false): Promise<void> {
   // CRITICAL SECURITY CHECK: Never seed in production!
@@ -150,7 +153,7 @@ export async function runSeed(isTest = false): Promise<void> {
     salary: { basic: 9000, hra: 2200, allowances: 1500, deductions: 700 },
   });
 
-  await User.create({
+  const hrUser = await User.create({
     email: 'hr@hrx.local',
     passwordHash,
     role: UserRole.HR,
@@ -174,7 +177,7 @@ export async function runSeed(isTest = false): Promise<void> {
     salary: { basic: 8500, hra: 2000, allowances: 1400, deductions: 600 },
   });
 
-  await User.create({
+  const managerUser = await User.create({
     email: 'manager@hrx.local',
     passwordHash,
     role: UserRole.MANAGER,
@@ -233,6 +236,79 @@ export async function runSeed(isTest = false): Promise<void> {
       });
     }
   }
+
+  // 7. Seed Official HR Policies
+  console.log('📜 Seeding Company HR Policies...');
+  await Policy.create([
+    {
+      title: 'Annual Paid Leave & Time Off Policy',
+      category: 'Leave',
+      content:
+        'All full-time employees are entitled to 20 days of Annual Paid Leave per calendar year. ' +
+        'In addition, 10 days of Sick & Medical Leave are granted for personal illness or family care. ' +
+        'Leave requests must be submitted through the HRX Portal at least 3 business days in advance for planned leaves. ' +
+        'Leave balances are deducted only upon manager or HR approval. Working days exclude standard weekends (Saturday and Sunday) and official company holidays.',
+      version: '2.1',
+      isActive: true,
+    },
+    {
+      title: 'Working Hours, Late Grace & Attendance Policy',
+      category: 'Attendance',
+      content:
+        'Core working hours are 09:00 to 18:00, Monday through Friday. ' +
+        'A daily grace period of 15 minutes is allowed (check-in up to 09:15 is considered on-time). ' +
+        'Check-ins after 09:15 are logged as Late. Daily working duration under 4 hours is automatically categorized as Half Day. ' +
+        'Employees are required to record both check-in and check-out daily via the portal.',
+      version: '1.4',
+      isActive: true,
+    },
+    {
+      title: 'Code of Conduct & Workplace Ethics',
+      category: 'Conduct',
+      content:
+        'HRX maintains zero tolerance for harassment, discrimination, or intimidation of any form. ' +
+        'All personnel are expected to uphold mutual dignity, professional collaboration, and strict data privacy standards. ' +
+        'Any observed ethics breaches should be escalated directly to Human Resources or reported via the confidential escalation channel.',
+      version: '3.0',
+      isActive: true,
+    },
+  ]);
+
+  // 8. Seed Announcements
+  console.log('📢 Seeding Announcements...');
+  await Announcement.create({
+    title: 'Welcome to Q4 2026: Year-End Performance Cycles',
+    content:
+      'Q4 Performance Review cycles are now open. Managers are requested to finalize reviews and submit ratings before November 15. ' +
+      'Employees can consult the AI HR Assistant or their managers for questions regarding the review process.',
+    authorId: hrUser._id,
+    authorName: 'Elena Rostova (Head of People Ops)',
+    priority: 'HIGH',
+    targetRole: 'ALL',
+  });
+
+  // 9. Seed Sample Performance Reviews
+  console.log('⭐ Seeding Sample Performance Reviews...');
+  await PerformanceReview.create([
+    {
+      employeeId: employeeEmp._id,
+      reviewerId: managerUser._id,
+      reviewPeriod: 'H1 2026',
+      ratings: [
+        { category: 'Technical Execution', score: 5, comments: 'Exceeded architectural objectives.' },
+        { category: 'Collaboration & Mentorship', score: 4, comments: 'Proactively supported junior engineers.' },
+        { category: 'Ownership & Initiative', score: 5, comments: 'Drove critical reliability enhancements.' },
+      ],
+      overallRating: 4.7,
+      strengths: 'Outstanding system design, proactive communications, and high delivery velocity.',
+      areasForImprovement: 'Expand involvement in cross-department technical workshops.',
+      goals: 'Lead the next-generation microservices architecture rollout in Q4.',
+      aiSummary:
+        'During H1 2026, Sarah Jenkins delivered exceptional technical results with high code quality and architecture ownership. ' +
+        'Recommended for senior technical leadership track.',
+      status: PerformanceReviewStatus.FINALIZED,
+    },
+  ]);
 
   console.log('✅ HRX Seed Completed Successfully!');
   console.log('========================================================');

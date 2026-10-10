@@ -116,6 +116,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.PERFORMANCE_READ_SELF,
     Permission.PERFORMANCE_READ_TEAM,
     Permission.PERFORMANCE_MANAGE,
+    Permission.REPORTS_READ,
     Permission.AI_USE,
   ],
 
@@ -128,6 +129,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.PAYROLL_READ_SELF,
     Permission.DOCUMENTS_READ_SELF,
     Permission.PERFORMANCE_READ_SELF,
+    Permission.REPORTS_READ,
     Permission.AI_USE,
   ],
 };

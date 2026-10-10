@@ -1,7 +1,8 @@
-import React from 'react';
-import { Menu, User as UserIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { Menu, User as UserIcon, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationCenter } from './NotificationCenter';
+import { AiAssistantModal } from '../AiAssistantModal';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, title = 'HR Management' }) => {
   const { user } = useAuth();
+  const [showAiModal, setShowAiModal] = useState(false);
 
   return (
     <header className="h-16 glass-panel border-b border-slate-800/80 px-6 flex items-center justify-between sticky top-0 z-30">
@@ -26,8 +28,21 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, title = 'HR Man
       </div>
 
       <div className="flex items-center gap-4">
+        {/* AI Assistant Button */}
+        <button
+          onClick={() => setShowAiModal(true)}
+          id="btn-open-ai-assistant"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 text-xs font-medium transition-all"
+        >
+          <Sparkles className="w-4 h-4 text-indigo-400" />
+          <span className="hidden md:inline">AI Assistant</span>
+        </button>
+
         {/* Notification Bell Center */}
         <NotificationCenter />
+
+        {/* AI Assistant Modal */}
+        <AiAssistantModal isOpen={showAiModal} onClose={() => setShowAiModal(false)} />
 
         {/* User Mini Profile */}
         {user && (

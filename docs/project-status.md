@@ -4,161 +4,79 @@
 - **Phase 1: Foundation (P0)**: ✅ Complete & Verified
 - **Phase 2: Employees, Departments, Dashboards (P0)**: ✅ Complete & Verified
 - **Phase 3: Attendance, Leave, Real-Time Notifications (P0)**: ✅ Complete & Verified
-- **Automated Test Suite**: 33/33 Passing Tests across 5 test suites
-- **E2E Browser Validation**: Complete multi-role check & Socket.IO real-time delivery verified
+- **Phase 4: Payroll & Documents (P1)**: ✅ Complete & Verified
+- **Phase 5: Performance & AI Assistant (P1)**: ✅ Complete & Verified
+- **Phase 6: Reports, Analytics, Announcements & Hardening (P1/P2)**: ✅ Complete & Verified
+- **Automated Test Suite**: 59/59 Passing Tests across 7 test suites (100% pass)
+- **Build Status**: TypeScript & Vite Production Bundle Clean (0 errors, build in ~39s)
 
 ---
 
 ## 1. Implemented Capabilities & Modules
 
-### Phase 3: Attendance, Leave & Real-Time Notifications
-- **Attendance Module**:
-  - `POST /attendance/check-in`: Validates only one record per calendar day, late grace threshold checking (based on OrgSettings), and notes capture.
-  - `POST /attendance/check-out`: Rejects check-out without prior check-in; computes duration in minutes across timezone boundaries; marks `HALF_DAY` if duration < 4 hours.
-  - `GET /attendance`: Scoped history (Employee sees self, Manager sees direct reports + self, HR/Admin sees all).
-  - `GET /attendance/summary`: Monthly metrics (Days present, late days, half days, total hours worked).
-- **Holidays & Org Settings (Admin)**:
-  - `GET /settings/org` & `PATCH /settings/org`: Updates company timezone (`Asia/Kolkata`), work week days, daily working hours, late threshold.
-  - `GET /settings/holidays`, `POST /settings/holidays`, `DELETE /settings/holidays/:id`: CRUD for official organization holidays with mandatory/optional tags.
-- **Leave Management & Workday Engine**:
-  - `calculateWorkingDays`: Excludes weekend days (per OrgSettings) and official calendar holidays.
-  - `POST /leave`: Overlap prevention (rejects overlapping pending or approved leave), balance sufficiency validation, atomic pending-day reservation.
-  - `PATCH /leave/:id/approve`: Atomic balance deduction on approval (`usedDays += daysCount`, `pendingDays -= daysCount`). Scoped so Managers can only approve direct reports.
-  - `PATCH /leave/:id/reject`: Refunds reserved pending balance; captures rejection rationale.
-  - `PATCH /leave/:id/cancel`: Employees can cancel their pending applications with balance refund.
-  - `GET /leave/balances`: Fetches yearly balances across Annual, Sick, and Casual leaves.
-- **Real-Time Notification Service & Socket.IO**:
-  - Authenticated Socket.IO handshake using JWT Bearer token.
-  - Automatic room join: `user:${userId}` and `role:${role}`.
-  - DB persistence (`Notification` collection) + targeted live emission (`notification:new`).
-  - Frontend Notification Center bell popover with unread counter, live toast overlays, mark as read, and mark all as read.
+### Phase 5: Performance Reviews & AI Assistant
+- **Performance Review Lifecycle**:
+  - Cycles, reviewers, 4 rating categories (Technical Skills, Communication, Leadership, Delivery), goals, strengths, improvement areas, overall rating (1-5).
+  - Draft vs. Finalized states (Employees can view finalized reviews only).
+  - Role-based scoping and strict IDOR defenses.
+- **AI Service (`aiService.ts`)**:
+  - Provider interface with `GeminiAiProvider` using `@google/genai` (`gemini-1.5-flash`).
+  - 10-second request timeout, bounded retries (max 2), input sanitization (max 3,000 characters).
+  - Local deterministic fallback active if `GEMINI_API_KEY` is missing or offline.
+  - Advisory AI Performance Summary generator (`POST /api/v1/performance/summarize`) stored with review as editable draft.
+- **HR Policy Management & AI HR Assistant**:
+  - Policy catalog (`/api/v1/policies`) with pre-seeded sample policies (Leave Policy, Attendance Policy, Code of Conduct).
+  - AI HR Assistant (`POST /api/v1/ai/assistant`) with conversation history that answers strictly within company policy bounds and caller's allowed data.
+  - Active prompt-injection defense refusing queries seeking to bypass rules or leak other employees' confidential records.
+  - Sliding-window IP/user rate limiter (`rateLimiter.ts`) returning 429 upon abuse.
+  - Zero-exposure guarantee: API keys strictly protected on backend, never bundled into client app.
+
+### Phase 6: Analytics, Reports, Announcements & Production Readiness
+- **Real-Time Analytics Dashboard**:
+  - Role-scoped metrics: Headcount, department breakdown, attendance rates, leave trends, payroll distribution, performance score averages.
+- **Role-Scoped Reports Generator**:
+  - CSV report exports for Employees, Attendance, Payroll, and Leaves (`POST /api/v1/reports/export`).
+  - Scoped strictly by role permissions and logged to audit trail.
+- **Company Announcements**:
+  - Real-time broadcasts via Socket.IO (`announcement:new`) and persistent feed with priority tagging.
+- **Audit Logging**:
+  - Admin-only audit log viewer (`GET /api/v1/audit-logs`) tracking critical actions across all modules.
+- **Deployment Configurations**:
+  - `vercel.json` (SPA rewrites & reverse proxy).
+  - `render.yaml` (Production backend Web Service blueprint with `/api/v1/health`).
+  - `.github/workflows/ci.yml` (Automated lint, typecheck, test, and build pipeline).
+  - Comprehensive documentation: `docs/mongodb-atlas-setup.md` and `docs/deployment.md`.
 
 ---
 
 ## 2. Test Execution Results
 
 ```text
+ ✓ tests/payroll_documents.test.ts (10 tests)
+ ✓ tests/performance_ai_reports.test.ts (16 tests)
  ✓ tests/attendance_leave_notifications.test.ts (8 tests)
  ✓ tests/employee_department.test.ts (11 tests)
- ✓ tests/auth.test.ts (6 tests)
- ✓ tests/security.test.ts (3 tests)
- ✓ tests/rbac.test.ts (5 tests)
-
- Test Files  5 passed (5)
-      Tests  33 passed (33)
-   Duration  25.60s
-```
-
-### Verified Phase 3 Test Cases:
-1. `Records check-in with correct status and enforces one record per day`
-2. `Rejects checkout before check-in (404 / 400 Bad Request)`
-3. `Computes attendance duration across timezone boundaries and half-day status`
-4. `Calculates working days excluding weekends and official organization holidays`
-5. `Rejects leave request if balance is insufficient (400 Bad Request)`
-6. `Applies for leave, deducts pending balance, and prevents overlapping requests`
-7. `Manager cannot approve leave for non-reports (Forbidden 403)`
-8. `Notification is persisted and delivered only to the target user`
-
----
-
-## 3. End-to-End Browser Check Results
-- **Employee Check-In**: Employee logged in, clicked "Check In", status updated to "Checked In" with live clock.
-- **Leave Application**: Applied for 3 working days of Annual Paid Leave (`2026-11-02` to `2026-11-04`). Verified pending balance reservation.
-- **HR Approval**: HR logged in, reviewed request under "Approvals" tab, and approved.
-- **Atomic Balance Deduction**: Employee logged back in, confirmed Annual Leave balance updated to 17 remaining (3 used).
-- **Socket.IO Real-Time Notification**: Notification bell indicator incremented; popover displayed *"Leave Request Approved: Your leave request from 2026-11-02 to 2026-11-04 (3 days) has been approved."*
-
-### Monorepo Scaffold & Tooling
-- **Workspaces**: Root npm workspaces (`packages/*`, `apps/*`).
-- **Shared Package (`@hrx/shared`)**: Type definitions, Zod validation schemas, and granular RBAC permission matrix. Dual ESM/CJS build with DTS generation via `tsup`.
-- **Environment Validation**: Validated via Zod on startup (`apps/api/src/config/env.ts`), with `.env.example` templates.
-
-### Database & Data Models
-- **Database Connection**: MongoDB connection via Mongoose with auto-reconnect, strict query enforcement, and graceful shutdown handlers.
-- **Models Implemented with Indexes**:
-  - `User`: Email uniqueness, bcrypt password hashing, status, lockout tracking, role assignment.
-  - `Employee`: Unique `employeeCode`, department ref, manager ref, status, text search index.
-  - `Department`: Unique code and name, head ref, active flag.
-  - `Attendance`: Compound uniqueness index on `(employeeId, date)` for daily records.
-  - `LeaveType`, `LeaveRequest`, `LeaveBalance`: Compound index on `(employeeId, leaveTypeId, year)`.
-  - `Payroll`: Compound index on `(employeeId, year, month)`.
-  - `DocumentModel`, `PerformanceReview`, `Notification`, `AuditLog`.
-  - `OrgSettings`: Timezone, late threshold, work week configuration.
-  - `RefreshSession`: Cryptographic SHA-256 token hash, session family UUID, rotation & revocation status.
-- **Safe Seed Script**: `apps/api/src/scripts/seed.ts` refuses execution if `NODE_ENV === 'production'`. Seeds 4 demo roles, 4 departments, 4 employees, and 2026 leave balances.
-
-### Authentication & RBAC Security
-- **Endpoints**:
-  - `POST /api/v1/auth/login`: Account lockout after 5 consecutive failed attempts (15-minute freeze). Issues access token and HttpOnly secure cookie.
-  - `POST /api/v1/auth/refresh`: Token rotation in session families. Cryptographic reuse detection revokes entire token family upon breach attempt.
-  - `POST /api/v1/auth/logout`: Revokes active refresh session and clears auth cookie.
-  - `GET /api/v1/auth/me`: Fetches profile and granular permissions.
-  - `POST /api/v1/auth/change-password`: Enforces password complexity and revokes stale sessions.
-- **RBAC Matrix**:
-  - Granular permissions mapped across `ADMIN`, `HR`, `MANAGER`, and `EMPLOYEE`.
-  - Authorized middleware guards routes based on permission checks.
-  - HR is explicitly prevented from modifying or deactivating `ADMIN` accounts.
-  - Scoping helpers restrict managers to direct reports and employees to self-service.
-
-### Observability & Security Middleware
-- **Centralized Error Handling**: Standardized error envelope (`{ success: false, error: { code, message, details } }`). Stack traces redacted in production.
-- **Logging**: Structured Pino logger with request ID tracing (`x-request-id`) and credential redaction.
-- **NoSQL Injection Shield**: Rejects query operator tampering (`$gt`, `$where`, dotted paths).
-- **Audit Logging Service**: Captures security, auth, and state changes.
-- **Probes**: `/health` (uptime, memory) and `/ready` (MongoDB connection state).
-
-### Web App Shell & Frontend
-- **Design System**: Enterprise dark SaaS theme with Plus Jakarta Sans, glassmorphism, responsive collapsible navigation, and role-coded badges.
-- **State & Context**: In-memory access token storage with automatic silent refresh interceptor.
-- **Navigation**: RBAC-driven dynamic routes and sidebar links.
-- **Pages**:
-  - `/login`: Form with instant quick-login demo buttons.
-  - `/dashboard`: Role-aware metrics (Headcount & department breakdown for Admin/HR, scoped direct reports for Manager, profile and leave balances for Employee).
-  - `/employees`: Search, department filter, status filter, sorting allowlist, pagination, and "Add Employee" modal.
-  - `/employees/:id`: Tabbed views (Overview, Contact & Emergency, Compensation) and self-service edit modal.
-  - `/departments`: Department grid with employee count badges and "Add Department" modal.
-
----
-
-## 2. Test Execution Results
-
-```text
- ✓ tests/employee_department.test.ts (11 tests)
  ✓ tests/security.test.ts (3 tests)
  ✓ tests/auth.test.ts (6 tests)
  ✓ tests/rbac.test.ts (5 tests)
 
- Test Files  4 passed (4)
-      Tests  25 passed (25)
-   Duration  14.65s
+ Test Files  7 passed (7)
+      Tests  59 passed (59)
+   Duration  4.96s
 ```
 
-### Verified Test Cases:
-1. `Admin can create a new department`
-2. `Employee role CANNOT create a department (403 Forbidden)`
-3. `Admin and HR can create an employee with auto-generated employee code`
-4. `Rejects duplicate employee email with 409 Conflict`
-5. `Manager scoping: Manager only sees self and direct reports in list`
-6. `Employee cannot view another employee profile directly (403 Forbidden)`
-7. `Employee can view their own employee profile`
-8. `HR cannot modify an ADMIN employee account (403 Forbidden)`
-9. `Employee self-service is restricted to allowed fields`
-10. `Rejects sorting by unapproved field with 400 Bad Request`
-11. `Returns role-aware dashboard metrics`
-12. `Seed script must refuse execution when NODE_ENV is production`
-13. `Rejects requests containing NoSQL query operators like $gt or dotted path`
-14. `Rejects invalid ObjectId parameters with 400 Bad Request`
-15. `Logs in successfully with valid demo credentials`
-16. `Rejects invalid password with 401 Unauthorized`
-17. `Returns current user profile on GET /auth/me with valid Bearer token`
-18. `Rejects unauthenticated access to /me with 401`
-19. `Rotates refresh token and detects reuse attempt`
-20. `Locks account after 5 consecutive failed login attempts`
-21. `ADMIN should possess all defined system permissions`
-22. `HR should have employee management permissions but not settings manage`
-23. `MANAGER should only have team-level permissions`
-24. `EMPLOYEE should only have self-service permissions`
-25. `hasAnyPermission and hasAllPermissions should accurately evaluate arrays`
+### Verified Phase 5 & 6 Test Highlights:
+1. `Creates performance review in DRAFT state`
+2. `Employee CANNOT see draft review (403/hidden), but CAN see finalized review`
+3. `Employee cannot view another employee's performance review (403 Forbidden)`
+4. `Generates AI performance summary draft adhering to schema`
+5. `AI Assistant answers policy questions accurately based on company policies`
+6. `AI Assistant refuses prompt-injection attempts and off-topic requests`
+7. `AI endpoints rate limiter responds with 429 when threshold exceeded`
+8. `Ensures GEMINI_API_KEY is not leaked into client bundle or web environment`
+9. `Admin and HR can export company-wide reports; Employee export is scoped to self only`
+10. `Announcements broadcast real-time event and persist to feed`
+11. `Audit logs restricted to Admin only (Non-admin receives 403)`
 
 ---
 
@@ -166,10 +84,9 @@
 
 All demo accounts use password: `Password123!`
 
-| Role | Email | Name |
-| :--- | :--- | :--- |
-| **ADMIN** | `admin@hrx.local` | Alex Vance (CTO) |
-| **HR** | `hr@hrx.local` | Elena Rostova (Head of People Ops) |
-| **MANAGER** | `manager@hrx.local` | Marcus Sterling (Engineering Lead) |
-| **EMPLOYEE** | `employee@hrx.local` | Sarah Connor (Senior Engineer) |
-| **NEW EMPLOYEE** | `david.kim@hrx.local` | David Kim (Data Engineer - E2E created) |
+| Role | Email | Name | Default Access |
+| :--- | :--- | :--- | :--- |
+| **ADMIN** | `admin@hrx.local` | Alex Vance (CTO) | Full platform admin, audit logs, system config |
+| **HR** | `hr@hrx.local` | Elena Rostova (Head of People Ops) | Employee CRUD, Leaves, Payroll, Policies, Announcements |
+| **MANAGER** | `manager@hrx.local` | Marcus Sterling (Engineering Lead) | Direct reports, Team approvals, Reviews |
+| **EMPLOYEE** | `employee@hrx.local` | Sarah Jenkins (Senior Engineer - EMP-004) | Self-service portal, Leaves, Payslips, AI Assistant |

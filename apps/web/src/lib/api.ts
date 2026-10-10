@@ -95,3 +95,14 @@ export async function apiRequest<T = any>(
 
   return json;
 }
+
+export const api = {
+  get: <T = any>(endpoint: string, params?: Record<string, any>) =>
+    apiRequest<T>(endpoint, { method: 'GET', params }),
+  post: <T = any>(endpoint: string, body?: any) =>
+    apiRequest<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  patch: <T = any>(endpoint: string, body?: any) =>
+    apiRequest<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),
+  delete: <T = any>(endpoint: string) =>
+    apiRequest<T>(endpoint, { method: 'DELETE' }),
+};

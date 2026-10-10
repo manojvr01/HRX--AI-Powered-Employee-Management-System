@@ -13,3 +13,5 @@ export * from './AuditLog.js';
 export * from './OrgSettings.js';
 export * from './RefreshSession.js';
 export * from './Holiday.js';
+export * from './Policy.js';
+export * from './Announcement.js';

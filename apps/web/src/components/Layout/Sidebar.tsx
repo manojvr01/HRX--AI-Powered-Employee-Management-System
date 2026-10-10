@@ -10,6 +10,12 @@ import {
   CalendarCheck,
   Palmtree,
   Settings,
+  Receipt,
+  FileText,
+  Award,
+  BarChart3,
+  Megaphone,
+  ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Permission, UserRole } from '@hrx/shared';
@@ -42,6 +48,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       show: true,
     },
     {
+      label: 'Payroll',
+      to: '/payroll',
+      icon: Receipt,
+      show: user?.role !== UserRole.MANAGER,
+    },
+    {
+      label: 'Documents',
+      to: '/documents',
+      icon: FileText,
+      show: true,
+    },
+    {
       label: user?.role === UserRole.MANAGER ? 'My Team' : 'Employees',
       to: '/employees',
       icon: Users,
@@ -52,6 +70,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       to: '/departments',
       icon: Building2,
       show: can(Permission.DEPARTMENTS_READ),
+    },
+    {
+      label: 'Performance',
+      to: '/performance',
+      icon: Award,
+      show: true,
+    },
+    {
+      label: 'Reports & Analytics',
+      to: '/reports',
+      icon: BarChart3,
+      show: true,
+    },
+    {
+      label: 'Announcements',
+      to: '/announcements',
+      icon: Megaphone,
+      show: true,
+    },
+    {
+      label: 'Audit Trail',
+      to: '/audit-logs',
+      icon: ShieldAlert,
+      show: user?.role === UserRole.ADMIN,
     },
     {
       label: 'Settings',

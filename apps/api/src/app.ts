@@ -15,6 +15,15 @@ import { attendanceRoutes } from './modules/attendance/attendanceRoutes.js';
 import { leaveRoutes } from './modules/leave/leaveRoutes.js';
 import { settingsRoutes } from './modules/settings/settingsRoutes.js';
 import { notificationRoutes } from './modules/notifications/notificationRoutes.js';
+import { payrollRoutes } from './modules/payroll/payrollRoutes.js';
+import { documentRoutes } from './modules/documents/documentRoutes.js';
+import { performanceRoutes } from './modules/performance/performanceRoutes.js';
+import { policyRoutes } from './modules/policies/policyRoutes.js';
+import { aiRoutes } from './modules/ai/aiRoutes.js';
+import { analyticsRoutes } from './modules/analytics/analyticsRoutes.js';
+import { reportRoutes } from './modules/reports/reportRoutes.js';
+import { announcementRoutes } from './modules/announcements/announcementRoutes.js';
+import { auditRoutes } from './modules/audit/auditRoutes.js';
 import { NotFoundError } from './utils/errors.js';
 
 export const app = express();
@@ -56,6 +65,15 @@ app.use('/api/v1/leaves', leaveRoutes);
 app.use('/api/v1/leave', leaveRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/payroll', payrollRoutes);
+app.use('/api/v1/documents', documentRoutes);
+app.use('/api/v1/performance', performanceRoutes);
+app.use('/api/v1/policies', policyRoutes);
+app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/announcements', announcementRoutes);
+app.use('/api/v1/audit-logs', auditRoutes);
 
 // 404 Catch-all handler
 app.use((req, res, next) => {

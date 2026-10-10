@@ -29,3 +29,8 @@ pnpm-debug.log*
 # Playwright & test reports
 test-results/
 playwright-report/
+
+# Local databases
+.mongo-data/
+uploads/
+scratch/

@@ -5,6 +5,8 @@ import {
   EmployeeStatus,
   AttendanceStatus,
   LeaveRequestStatus,
+  PayrollStatus,
+  PerformanceReviewStatus,
   DocumentCategory,
 } from '../constants/roles.js';
 
@@ -124,3 +126,120 @@ export const paginationQuerySchema = z.object({
 });
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
+
+// Payroll Schemas
+export const createPayrollSchema = z.object({
+  employeeId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid employee ID'),
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2000).max(2100),
+  basicSalary: z.number().nonnegative(),
+  hra: z.number().nonnegative().default(0),
+  allowances: z.number().nonnegative().default(0),
+  deductions: z.number().nonnegative().default(0),
+  status: z.nativeEnum(PayrollStatus).default(PayrollStatus.DRAFT),
+  notes: z.string().max(500).optional(),
+});
+
+export const updatePayrollSchema = z.object({
+  basicSalary: z.number().nonnegative().optional(),
+  hra: z.number().nonnegative().optional(),
+  allowances: z.number().nonnegative().optional(),
+  deductions: z.number().nonnegative().optional(),
+  status: z.nativeEnum(PayrollStatus).optional(),
+  notes: z.string().max(500).optional(),
+});
+
+// Document Metadata Schema
+export const createDocumentMetadataSchema = z.object({
+  employeeId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid employee ID'),
+  title: z.string().min(2).max(100),
+  category: z.nativeEnum(DocumentCategory),
+  isConfidential: z.boolean().default(false),
+});
+
+// Phase 5: Performance Review Schemas
+export const createPerformanceReviewSchema = z.object({
+  employeeId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid employee ID'),
+  reviewPeriod: z.string().min(2).max(50), // e.g. "Q1 2026" or "Annual 2026"
+  ratings: z.array(
+    z.object({
+      category: z.string().min(1).max(100),
+      score: z.number().min(1).max(5),
+      comments: z.string().max(500).optional(),
+    })
+  ).min(1, 'At least one rating category is required'),
+  overallRating: z.number().min(1).max(5),
+  strengths: z.string().max(2000).optional(),
+  areasForImprovement: z.string().max(2000).optional(),
+  goals: z.string().max(2000).optional(),
+  aiSummary: z.string().max(3000).optional(),
+  status: z.nativeEnum(PerformanceReviewStatus).default(PerformanceReviewStatus.DRAFT),
+});
+
+export const updatePerformanceReviewSchema = z.object({
+  reviewPeriod: z.string().min(2).max(50).optional(),
+  ratings: z.array(
+    z.object({
+      category: z.string().min(1).max(100),
+      score: z.number().min(1).max(5),
+      comments: z.string().max(500).optional(),
+    })
+  ).optional(),
+  overallRating: z.number().min(1).max(5).optional(),
+  strengths: z.string().max(2000).optional(),
+  areasForImprovement: z.string().max(2000).optional(),
+  goals: z.string().max(2000).optional(),
+  aiSummary: z.string().max(3000).optional(),
+  status: z.nativeEnum(PerformanceReviewStatus).optional(),
+});
+
+export const aiSummarizeReviewSchema = z.object({
+  employeeName: z.string().min(1),
+  position: z.string().min(1),
+  reviewPeriod: z.string().min(1),
+  overallRating: z.number().min(1).max(5),
+  strengths: z.string().optional(),
+  areasForImprovement: z.string().optional(),
+  goals: z.string().optional(),
+  ratings: z.array(
+    z.object({
+      category: z.string(),
+      score: z.number(),
+    })
+  ).optional(),
+});
+
+// Phase 5: Policy & AI Assistant Schemas
+export const createPolicySchema = z.object({
+  title: z.string().min(3).max(150),
+  category: z.string().min(2).max(50),
+  content: z.string().min(10).max(10000),
+  version: z.string().default('1.0'),
+  isActive: z.boolean().default(true),
+});
+
+export const askAiAssistantSchema = z.object({
+  question: z.string().min(2).max(1000),
+  history: z.array(
+    z.object({
+      role: z.enum(['user', 'assistant']),
+      content: z.string(),
+    })
+  ).max(20).optional().default([]),
+});
+
+// Phase 6: Announcements & Reports Schemas
+export const createAnnouncementSchema = z.object({
+  title: z.string().min(2).max(150),
+  content: z.string().min(5).max(3000),
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH']).default('NORMAL'),
+  targetRole: z.enum(['ALL', 'ADMIN', 'HR', 'MANAGER', 'EMPLOYEE']).default('ALL'),
+});
+
+export const exportReportSchema = z.object({
+  type: z.enum(['employees', 'attendance', 'payroll', 'leaves']),
+  format: z.enum(['csv', 'json']).default('csv'),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  departmentId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
+});

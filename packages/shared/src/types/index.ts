@@ -261,6 +261,29 @@ export interface IRefreshSession {
   createdAt: string;
 }
 
+export interface IPolicy {
+  _id: string;
+  title: string;
+  category: string;
+  content: string;
+  version: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IAnnouncement {
+  _id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName?: string;
+  priority: 'LOW' | 'NORMAL' | 'HIGH';
+  targetRole?: UserRole | 'ALL';
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Auth DTOs
 export interface AuthUser {
   id: string;

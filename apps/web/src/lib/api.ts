@@ -17,11 +17,21 @@ export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
+// Support Vite environment variable VITE_API_URL or fall back to /api/v1
+const rawEnvUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || '';
+export const API_BASE_URL = rawEnvUrl ? rawEnvUrl.replace(/\/+$/, '') : '/api/v1';
+
 export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<{ success: boolean; data?: T; message?: string; meta?: any; error?: any }> {
-  let url = endpoint.startsWith('http') ? endpoint : `/api/v1${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+  let url: string;
+  if (endpoint.startsWith('http')) {
+    url = endpoint;
+  } else {
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    url = `${API_BASE_URL}${cleanEndpoint}`;
+  }
 
   if (options.params) {
     const searchParams = new URLSearchParams();
@@ -45,23 +55,33 @@ export async function apiRequest<T = any>(
     headers['Authorization'] = `Bearer ${accessTokenInMemory}`;
   }
 
-  let response = await fetch(url, {
-    ...options,
-    headers,
-    credentials: 'include', // Send httpOnly refresh cookie
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include', // Send httpOnly refresh cookie
+    });
+  } catch (netErr: any) {
+    throw {
+      success: false,
+      message: `Network error connecting to API: ${netErr?.message || 'Failed to fetch'}. Please verify backend server is running and accessible.`,
+    };
+  }
 
   // If 401 and not already a login or refresh request, try silent refresh
   if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
     try {
-      const refreshRes = await fetch('/api/v1/auth/refresh', {
+      const refreshUrl = `${API_BASE_URL}/auth/refresh`;
+      const refreshRes = await fetch(refreshUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       });
 
       if (refreshRes.ok) {
-        const refreshData = await refreshRes.json();
+        const refreshText = await refreshRes.text();
+        const refreshData = refreshText ? JSON.parse(refreshText) : {};
         const newToken = refreshData.data?.accessToken;
         if (newToken) {
           setAccessToken(newToken);
@@ -74,7 +94,6 @@ export async function apiRequest<T = any>(
           });
         }
       } else {
-        // Refresh failed, session expired
         setAccessToken(null);
         if (onSessionExpiredCallback) {
           onSessionExpiredCallback();
@@ -88,7 +107,21 @@ export async function apiRequest<T = any>(
     }
   }
 
-  const json = await response.json();
+  // Safe parsing to prevent "Unexpected end of JSON input" on HTML or empty responses
+  let json: any;
+  const rawText = await response.text();
+  try {
+    json = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    json = {
+      success: false,
+      message:
+        rawText && rawText.length < 200
+          ? rawText
+          : `Server returned non-JSON response (Status ${response.status}: ${response.statusText || 'Error'})`,
+    };
+  }
+
   if (!response.ok) {
     throw json;
   }

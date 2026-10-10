@@ -104,7 +104,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     const token = getAccessToken();
-    const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin;
+    const envSocketUrl = (import.meta.env.VITE_SOCKET_URL as string | undefined)?.trim();
+    const serverUrl = envSocketUrl || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin);
 
     const newSocket = io(serverUrl, {
       auth: { token },

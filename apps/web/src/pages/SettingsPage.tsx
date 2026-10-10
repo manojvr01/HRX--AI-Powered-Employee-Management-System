@@ -123,7 +123,7 @@ export const SettingsPage: React.FC = () => {
     if (!settings) return;
     const current = settings.workWeekDays || [];
     const exists = current.includes(day);
-    const updated = exists ? current.filter((d) => d !== day) : [...current, day].sort();
+    const updated = exists ? current.filter((d: number) => d !== day) : [...current, day].sort();
     setSettings({ ...settings, workWeekDays: updated });
   };
 

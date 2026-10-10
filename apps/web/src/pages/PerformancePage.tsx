@@ -107,7 +107,7 @@ export function PerformancePage() {
       await api.patch(`/performance/${reviewId}`, { status: PerformanceReviewStatus.FINALIZED });
       await fetchReviews();
       if (selectedReview?._id === reviewId) {
-        setSelectedReview((prev) => prev ? { ...prev, status: PerformanceReviewStatus.FINALIZED } : null);
+        setSelectedReview((prev: any) => prev ? { ...prev, status: PerformanceReviewStatus.FINALIZED } : null);
       }
     } catch (err: any) {
       alert(err?.message || 'Failed to finalize review');
@@ -259,7 +259,7 @@ export function PerformancePage() {
             <div className="space-y-3">
               <h4 className="text-xs font-semibold uppercase text-slate-400 tracking-wider">Competency Ratings</h4>
               <div className="space-y-2">
-                {selectedReview.ratings?.map((cat, idx) => (
+                {selectedReview.ratings?.map((cat: any, idx: number) => (
                   <div key={idx} className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 flex justify-between items-center text-sm">
                     <div>
                       <div className="font-medium text-white">{cat.category}</div>

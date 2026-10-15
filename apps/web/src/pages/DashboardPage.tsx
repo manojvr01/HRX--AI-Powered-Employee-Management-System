@@ -10,6 +10,7 @@ import {
   Briefcase,
   Shield,
   Layers,
+  Palmtree,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -84,7 +85,7 @@ export const DashboardPage: React.FC = () => {
       {/* 1. ADMIN & HR VIEW */}
       {(role === 'ADMIN' || role === 'HR') && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="glass-panel p-6 rounded-2xl flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -123,12 +124,33 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-3xl font-extrabold text-white mt-1">
                   {metrics.totalDepartments || 0}
                 </p>
-                <p className="text-xs text-amber-400 mt-1">Operational Units</p>
+                <p className="text-xs text-indigo-400 mt-1">Operational Units</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
                 <Building2 className="w-6 h-6" />
               </div>
             </div>
+
+            <Link
+              to="/leave"
+              className="glass-panel p-6 rounded-2xl flex items-center justify-between hover:border-amber-500/50 transition group"
+            >
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Pending Leaves
+                </p>
+                <p className="text-3xl font-extrabold text-white mt-1 group-hover:text-amber-300 transition">
+                  {metrics.pendingLeaves || 0}
+                </p>
+                <p className="text-xs text-amber-400 mt-1 flex items-center gap-1 font-semibold">
+                  <span>Review Approvals</span>
+                  <span className="text-[10px]">&rarr;</span>
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
+                <Palmtree className="w-6 h-6" />
+              </div>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -204,7 +226,7 @@ export const DashboardPage: React.FC = () => {
       {/* 2. MANAGER VIEW */}
       {role === 'MANAGER' && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="glass-panel p-6 rounded-2xl flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -232,6 +254,27 @@ export const DashboardPage: React.FC = () => {
                 <Building2 className="w-6 h-6" />
               </div>
             </div>
+
+            <Link
+              to="/leave"
+              className="glass-panel p-6 rounded-2xl flex items-center justify-between hover:border-amber-500/50 transition group"
+            >
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Team Pending Leaves
+                </p>
+                <p className="text-3xl font-extrabold text-white mt-1 group-hover:text-amber-300 transition">
+                  {metrics.pendingLeaves || 0}
+                </p>
+                <p className="text-xs text-amber-400 mt-1 flex items-center gap-1 font-semibold">
+                  <span>Review Approvals</span>
+                  <span className="text-[10px]">&rarr;</span>
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
+                <Palmtree className="w-6 h-6" />
+              </div>
+            </Link>
           </div>
 
           <div className="glass-panel p-6 rounded-2xl space-y-4">

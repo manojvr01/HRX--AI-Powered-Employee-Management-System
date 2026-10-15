@@ -18,11 +18,19 @@ import {
   ILeaveBalance,
   LeaveRequestStatus,
   Permission,
+  UserRole,
 } from '@hrx/shared';
 
 export const LeavePage: React.FC = () => {
   const { user, can } = useAuth();
-  const [activeTab, setActiveTab] = useState<'my' | 'approvals' | 'calendar'>('my');
+  const isApproverRole =
+    user?.role === UserRole.ADMIN || user?.role === UserRole.HR || user?.role === UserRole.MANAGER;
+  const canApprove = can(Permission.LEAVE_APPROVE) || isApproverRole;
+
+  // Default to approvals for HR & Admin
+  const [activeTab, setActiveTab] = useState<'my' | 'approvals' | 'history' | 'calendar'>(
+    user?.role === UserRole.ADMIN || user?.role === UserRole.HR ? 'approvals' : 'my'
+  );
   const [balances, setBalances] = useState<any[]>([]);
   const [leaveTypes, setLeaveTypes] = useState<ILeaveType[]>([]);
   const [myRequests, setMyRequests] = useState<any[]>([]);
@@ -33,6 +41,7 @@ export const LeavePage: React.FC = () => {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState<boolean>(false);
   const [rejectingLeaveId, setRejectingLeaveId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>('');
+  const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
 
   // Form states
   const [selectedLeaveType, setSelectedLeaveType] = useState<string>('');
@@ -42,8 +51,6 @@ export const LeavePage: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  const canApprove = can(Permission.LEAVE_APPROVE);
 
   const loadLeaveData = useCallback(async () => {
     setIsLoading(true);
@@ -69,10 +76,12 @@ export const LeavePage: React.FC = () => {
       if (reqRes.data) {
         setAllLeaves(reqRes.data);
         const myEmpId = user?.employee?.id;
-        const my = reqRes.data.filter((r: any) => {
-          const empId = r.employeeId?._id || r.employeeId;
-          return !myEmpId || empId === myEmpId;
-        });
+        const my = myEmpId
+          ? reqRes.data.filter((r: any) => {
+              const empId = r.employeeId?._id ? String(r.employeeId._id) : String(r.employeeId);
+              return empId === String(myEmpId);
+            })
+          : [];
         setMyRequests(my);
 
         if (canApprove) {
@@ -125,22 +134,29 @@ export const LeavePage: React.FC = () => {
   };
 
   const handleCancelLeave = async (id: string) => {
+    setActionInProgressId(id);
     try {
       await apiRequest(`/leave/${id}/cancel`, { method: 'PATCH' });
       setFeedback({ type: 'success', message: 'Leave request cancelled' });
       await loadLeaveData();
     } catch (err: any) {
       setFeedback({ type: 'error', message: err?.message || 'Failed to cancel request' });
+    } finally {
+      setActionInProgressId(null);
     }
   };
 
   const handleApproveLeave = async (id: string) => {
+    setActionInProgressId(id);
+    setFeedback(null);
     try {
       await apiRequest(`/leave/${id}/approve`, { method: 'PATCH' });
       setFeedback({ type: 'success', message: 'Leave request approved successfully!' });
       await loadLeaveData();
     } catch (err: any) {
       setFeedback({ type: 'error', message: err?.message || 'Failed to approve request' });
+    } finally {
+      setActionInProgressId(null);
     }
   };
 
@@ -152,6 +168,8 @@ export const LeavePage: React.FC = () => {
 
   const handleConfirmReject = async () => {
     if (!rejectingLeaveId) return;
+    setActionInProgressId(rejectingLeaveId);
+    setFeedback(null);
     try {
       await apiRequest(`/leave/${rejectingLeaveId}/reject`, {
         method: 'PATCH',
@@ -163,6 +181,8 @@ export const LeavePage: React.FC = () => {
       await loadLeaveData();
     } catch (err: any) {
       setFeedback({ type: 'error', message: err?.message || 'Failed to reject request' });
+    } finally {
+      setActionInProgressId(null);
     }
   };
 
@@ -219,6 +239,31 @@ export const LeavePage: React.FC = () => {
         </div>
       )}
 
+      {/* Pending Approvals Alert Banner for Approvers */}
+      {canApprove && pendingApprovals.length > 0 && activeTab !== 'approvals' && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-amber-500/5 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0 text-amber-300">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">
+                {pendingApprovals.length} Leave {pendingApprovals.length === 1 ? 'Request' : 'Requests'} Awaiting Your Decision
+              </p>
+              <p className="text-xs text-slate-400">
+                Team members are waiting for approval. Review and decide directly.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('approvals')}
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-md whitespace-nowrap self-start sm:self-auto"
+          >
+            Review Approvals ({pendingApprovals.length})
+          </button>
+        </div>
+      )}
+
       {/* Leave Balances Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {balances.map((b) => (
@@ -248,8 +293,27 @@ export const LeavePage: React.FC = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
+        {canApprove && (
+          <button
+            id="tab-approvals"
+            onClick={() => setActiveTab('approvals')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'approvals'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            Pending Approvals
+            {pendingApprovals.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black">
+                {pendingApprovals.length}
+              </span>
+            )}
+          </button>
+        )}
         <button
+          id="tab-my-requests"
           onClick={() => setActiveTab('my')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
             activeTab === 'my'
@@ -261,22 +325,19 @@ export const LeavePage: React.FC = () => {
         </button>
         {canApprove && (
           <button
-            onClick={() => setActiveTab('approvals')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-              activeTab === 'approvals'
+            id="tab-history"
+            onClick={() => setActiveTab('history')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'history'
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
-            Approvals
-            {pendingApprovals.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black">
-                {pendingApprovals.length}
-              </span>
-            )}
+            All Company Requests ({allLeaves.length})
           </button>
         )}
         <button
+          id="tab-calendar"
           onClick={() => setActiveTab('calendar')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
             activeTab === 'calendar'
@@ -312,8 +373,18 @@ export const LeavePage: React.FC = () => {
                   </tr>
                 ) : myRequests.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500 text-xs">
-                      No leave applications found.
+                    <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <p className="text-slate-500">No personal leave applications found.</p>
+                        {canApprove && pendingApprovals.length > 0 && (
+                          <button
+                            onClick={() => setActiveTab('approvals')}
+                            className="text-indigo-400 hover:text-indigo-300 font-semibold underline text-xs transition"
+                          >
+                            View {pendingApprovals.length} team leave request(s) awaiting approval →
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -341,10 +412,11 @@ export const LeavePage: React.FC = () => {
                       <td className="py-3 px-4 text-right">
                         {r.status === LeaveRequestStatus.PENDING && (
                           <button
+                            disabled={actionInProgressId === r._id}
                             onClick={() => handleCancelLeave(r._id)}
-                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition"
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition disabled:opacity-50"
                           >
-                            Cancel
+                            {actionInProgressId === r._id ? 'Cancelling...' : 'Cancel'}
                           </button>
                         )}
                       </td>
@@ -357,9 +429,18 @@ export const LeavePage: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 2: Approvals (HR / Manager) */}
+      {/* Tab 2: Approvals (HR / Manager / Admin) */}
       {activeTab === 'approvals' && canApprove && (
         <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-400" />
+              Pending Approvals ({pendingApprovals.length})
+            </h2>
+            <span className="text-xs text-slate-400">
+              Review and act on leave applications
+            </span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
@@ -375,49 +456,153 @@ export const LeavePage: React.FC = () => {
               <tbody className="divide-y divide-slate-800/50">
                 {pendingApprovals.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500 text-xs">
-                      No pending leave requests requiring approval.
+                    <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <CheckCircle className="w-8 h-8 text-emerald-500/50" />
+                        <p className="font-semibold text-white">All caught up!</p>
+                        <p className="text-slate-400">No pending leave requests requiring approval.</p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
-                  pendingApprovals.map((r) => (
-                    <tr key={r._id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3 px-4 font-bold text-white">
-                        {r.employeeId?.firstName} {r.employeeId?.lastName} (
-                        {r.employeeId?.employeeCode})
-                      </td>
-                      <td className="py-3 px-4 text-indigo-400 font-semibold">
-                        {r.leaveTypeId?.name}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-slate-300">
-                        {r.daysCount} days
-                      </td>
-                      <td className="py-3 px-4 text-slate-300 font-mono">
-                        {r.startDate} → {r.endDate}
-                      </td>
-                      <td className="py-3 px-4 text-slate-400 max-w-xs truncate">{r.reason}</td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="inline-flex items-center gap-2">
-                          <button
-                            id={`btn-approve-leave-${r._id}`}
-                            onClick={() => handleApproveLeave(r._id)}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 transition shadow-sm"
+                  pendingApprovals.map((r) => {
+                    const emp = r.employeeId;
+                    const empName = emp?.firstName
+                      ? `${emp.firstName} ${emp.lastName}`
+                      : emp?.email || 'Unknown Employee';
+                    const empCode = emp?.employeeCode || 'EMP';
+                    const isActing = actionInProgressId === r._id;
+
+                    return (
+                      <tr key={r._id} className="hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 font-bold text-xs uppercase flex-shrink-0">
+                              {empName.slice(0, 2)}
+                            </div>
+                            <div>
+                              <p className="font-bold text-white">{empName}</p>
+                              <p className="text-[11px] text-slate-400 font-mono">
+                                {empCode} {emp?.position ? `• ${emp.position}` : ''}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-indigo-400 font-semibold">
+                            {r.leaveTypeId?.name || 'Leave'}
+                          </span>
+                          {r.leaveTypeId?.isPaid !== undefined && (
+                            <span className="block text-[10px] text-slate-400 font-mono">
+                              {r.leaveTypeId.isPaid ? 'Paid' : 'Unpaid'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-slate-300">
+                          {r.daysCount} {r.daysCount === 1 ? 'day' : 'days'}
+                        </td>
+                        <td className="py-3 px-4 text-slate-300 font-mono">
+                          {r.startDate} <span className="text-slate-500">→</span> {r.endDate}
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 max-w-xs">
+                          <p className="truncate" title={r.reason}>
+                            {r.reason || 'No reason provided'}
+                          </p>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              id={`btn-approve-leave-${r._id}`}
+                              disabled={isActing}
+                              onClick={() => handleApproveLeave(r._id)}
+                              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-[11px] flex items-center gap-1.5 transition shadow-sm"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              {isActing ? 'Processing...' : 'Approve'}
+                            </button>
+                            <button
+                              id={`btn-reject-leave-${r._id}`}
+                              disabled={isActing}
+                              onClick={() => openRejectModal(r._id)}
+                              className="px-3.5 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 disabled:opacity-50 text-rose-300 font-bold text-[11px] flex items-center gap-1.5 transition"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Company Leave History (HR / Admin) */}
+      {activeTab === 'history' && canApprove && (
+        <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-indigo-400" />
+              Company Leave History ({allLeaves.length})
+            </h2>
+            <span className="text-xs text-slate-400">All submitted, approved, and rejected leaves</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-900/40 text-slate-400 font-mono uppercase text-[11px]">
+                  <th className="py-3 px-4">Employee</th>
+                  <th className="py-3 px-4">Leave Type</th>
+                  <th className="py-3 px-4">Days</th>
+                  <th className="py-3 px-4">Dates</th>
+                  <th className="py-3 px-4">Reason</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Actioned By</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {allLeaves.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-slate-500 text-xs">
+                      No leave records recorded in the company.
+                    </td>
+                  </tr>
+                ) : (
+                  allLeaves.map((r) => {
+                    const emp = r.employeeId;
+                    const empName = emp?.firstName
+                      ? `${emp.firstName} ${emp.lastName}`
+                      : emp?.email || 'Employee';
+                    return (
+                      <tr key={r._id} className="hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-4 font-bold text-white">{empName}</td>
+                        <td className="py-3 px-4 text-indigo-400 font-semibold">
+                          {r.leaveTypeId?.name || 'Leave'}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-slate-300">{r.daysCount} days</td>
+                        <td className="py-3 px-4 text-slate-300 font-mono">
+                          {r.startDate} <span className="text-slate-500">→</span> {r.endDate}
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 max-w-xs truncate">{r.reason}</td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(
+                              r.status
+                            )}`}
                           >
-                            <Check className="w-3.5 h-3.5" />
-                            Approve
-                          </button>
-                          <button
-                            id={`btn-reject-leave-${r._id}`}
-                            onClick={() => openRejectModal(r._id)}
-                            className="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 font-bold text-[11px] flex items-center gap-1 transition"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            Reject
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                          {r.approverId?.email || r.approverId?.role || '-'}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

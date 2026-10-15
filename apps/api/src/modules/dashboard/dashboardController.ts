@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { Employee } from '../../models/Employee.js';
 import { Department } from '../../models/Department.js';
 import { LeaveBalance } from '../../models/LeaveBalance.js';
-import { UserRole, EmployeeStatus } from '@hrx/shared';
+import { LeaveRequest } from '../../models/LeaveRequest.js';
+import { UserRole, EmployeeStatus, LeaveRequestStatus } from '@hrx/shared';
 import { UnauthorizedError } from '../../utils/errors.js';
 import mongoose from 'mongoose';
 
@@ -19,11 +20,12 @@ export async function getDashboardMetrics(
 
     // 1. ADMIN & HR Metrics
     if (user.role === UserRole.ADMIN || user.role === UserRole.HR) {
-      const [totalEmployees, activeEmployees, totalDepartments, recentEmployees, deptDistribution] =
+      const [totalEmployees, activeEmployees, totalDepartments, pendingLeaves, recentEmployees, deptDistribution] =
         await Promise.all([
           Employee.countDocuments({ status: { $ne: EmployeeStatus.TERMINATED } }),
           Employee.countDocuments({ status: EmployeeStatus.ACTIVE }),
           Department.countDocuments({ isActive: true }),
+          LeaveRequest.countDocuments({ status: LeaveRequestStatus.PENDING }),
           Employee.find({ status: { $ne: EmployeeStatus.TERMINATED } })
             .populate('departmentId', 'name code')
             .sort({ createdAt: -1 })
@@ -63,6 +65,7 @@ export async function getDashboardMetrics(
             totalEmployees,
             activeEmployees,
             totalDepartments,
+            pendingLeaves,
             recentEmployees,
             departmentDistribution: deptDistribution.map((d) => ({
               name: d.departmentName,
@@ -93,6 +96,13 @@ export async function getDashboardMetrics(
         ? await Employee.findById(managerEmpId).populate('departmentId', 'name code').lean()
         : null;
 
+      const pendingLeaves = directReports.length > 0
+        ? await LeaveRequest.countDocuments({
+            employeeId: { $in: directReports.map((d) => d._id) },
+            status: LeaveRequestStatus.PENDING,
+          })
+        : 0;
+
       res.status(200).json({
         success: true,
         data: {
@@ -100,6 +110,7 @@ export async function getDashboardMetrics(
           metrics: {
             teamSize: directReports.length,
             department: (managerProfile?.departmentId as any)?.name || 'General',
+            pendingLeaves,
             directReports,
             profile: managerProfile,
           },

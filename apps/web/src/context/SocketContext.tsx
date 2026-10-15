@@ -105,7 +105,18 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const token = getAccessToken();
     const envSocketUrl = (import.meta.env.VITE_SOCKET_URL as string | undefined)?.trim();
-    const serverUrl = envSocketUrl || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin);
+    let defaultServerUrl = 'http://localhost:5000';
+    const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+    if (rawApiUrl && rawApiUrl.startsWith('http')) {
+      try {
+        defaultServerUrl = new URL(rawApiUrl).origin;
+      } catch {
+        // ignore invalid URL
+      }
+    } else if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      defaultServerUrl = window.location.origin;
+    }
+    const serverUrl = envSocketUrl || defaultServerUrl;
 
     const newSocket = io(serverUrl, {
       auth: { token },

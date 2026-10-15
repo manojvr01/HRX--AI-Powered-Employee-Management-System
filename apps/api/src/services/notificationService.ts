@@ -7,41 +7,46 @@ export interface CreateNotificationParams {
   userId: string | mongoose.Types.ObjectId;
   title: string;
   message: string;
-  type?: 'INFO' | 'SUCCESS' | 'WARNING' | 'ALERT';
+  type?: 'INFO' | 'SUCCESS' | 'WARNING' | 'ALERT' | string;
   link?: string;
   metadata?: Record<string, unknown>;
 }
 
 export async function createAndSendNotification(
   params: CreateNotificationParams
-): Promise<INotificationDocument> {
+): Promise<INotificationDocument | null> {
   const userIdStr = params.userId.toString();
 
-  const notification = await Notification.create({
-    userId: new mongoose.Types.ObjectId(userIdStr),
-    title: params.title,
-    message: params.message,
-    type: params.type || 'INFO',
-    link: params.link,
-    metadata: params.metadata,
-    isRead: false,
-  });
-
-  // Real-time broadcast to the specific user's socket room
   try {
-    emitToUser(userIdStr, 'notification:new', {
-      id: notification._id.toString(),
-      title: notification.title,
-      message: notification.message,
-      type: notification.type,
-      link: notification.link,
-      createdAt: notification.createdAt,
+    const notification = await Notification.create({
+      userId: new mongoose.Types.ObjectId(userIdStr),
+      title: params.title,
+      message: params.message,
+      type: params.type || 'INFO',
+      link: params.link,
+      metadata: params.metadata,
+      isRead: false,
     });
-  } catch (err) {
-    logger.error({ err, userId: userIdStr }, 'Failed to emit socket notification');
-  }
 
-  return notification;
+    // Real-time broadcast to the specific user's socket room
+    try {
+      emitToUser(userIdStr, 'notification:new', {
+        id: notification._id.toString(),
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        link: notification.link,
+        createdAt: notification.createdAt,
+      });
+    } catch (err) {
+      logger.error({ err, userId: userIdStr }, 'Failed to emit socket notification');
+    }
+
+    return notification;
+  } catch (err) {
+    logger.error({ err, userId: userIdStr, params }, 'Failed to create notification');
+    return null;
+  }
 }
 
 export async function getUserNotifications(

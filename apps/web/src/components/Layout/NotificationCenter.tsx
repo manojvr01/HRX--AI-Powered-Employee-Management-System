@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, CheckCheck, Inbox } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, CheckCheck, Inbox, ExternalLink } from 'lucide-react';
 import { useSocket } from '../../context/SocketContext';
 
 export const NotificationCenter: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, unreadCount, isConnected, markAsRead, markAllAsRead } = useSocket();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -17,6 +19,16 @@ export const NotificationCenter: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleNotificationClick = async (notif: any) => {
+    if (!notif.isRead) {
+      await markAsRead(notif._id);
+    }
+    if (notif.link) {
+      navigate(notif.link);
+      setIsOpen(false);
+    }
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -76,9 +88,11 @@ export const NotificationCenter: React.FC = () => {
               notifications.map((notif) => (
                 <div
                   key={notif._id}
-                  onClick={() => !notif.isRead && markAsRead(notif._id)}
+                  onClick={() => handleNotificationClick(notif)}
                   className={`p-3.5 transition cursor-pointer flex gap-3 ${
-                    notif.isRead ? 'hover:bg-slate-800/40 opacity-75' : 'bg-indigo-950/20 hover:bg-indigo-950/40'
+                    notif.isRead
+                      ? 'hover:bg-slate-800/40 opacity-75'
+                      : 'bg-indigo-950/20 hover:bg-indigo-950/40'
                   }`}
                 >
                   <div className="pt-0.5">
@@ -89,9 +103,18 @@ export const NotificationCenter: React.FC = () => {
                     />
                   </div>
                   <div className="flex-1">
-                    <p className={`text-xs ${notif.isRead ? 'font-medium text-slate-300' : 'font-bold text-white'}`}>
-                      {notif.title}
-                    </p>
+                    <div className="flex items-center justify-between gap-1">
+                      <p
+                        className={`text-xs ${
+                          notif.isRead ? 'font-medium text-slate-300' : 'font-bold text-white'
+                        }`}
+                      >
+                        {notif.title}
+                      </p>
+                      {notif.link && (
+                        <ExternalLink className="w-3 h-3 text-slate-500 hover:text-indigo-400 transition" />
+                      )}
+                    </div>
                     <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{notif.message}</p>
                     <p className="text-[10px] text-slate-500 mt-1 font-mono">
                       {new Date(notif.createdAt).toLocaleTimeString([], {

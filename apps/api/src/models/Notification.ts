@@ -32,7 +32,6 @@ const notificationSchema = new Schema<INotificationDocument>(
     },
     type: {
       type: String,
-      enum: ['INFO', 'SUCCESS', 'WARNING', 'ALERT'],
       default: 'INFO',
     },
     isRead: {

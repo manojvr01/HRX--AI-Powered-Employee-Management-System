@@ -12,10 +12,11 @@ import {
   ForbiddenError,
 } from '../../utils/errors.js';
 import { AuthenticatedUser } from '../../middleware/auth.js';
-import { LeaveRequestStatus, UserRole } from '@hrx/shared';
+import { LeaveRequestStatus, UserRole, UserStatus } from '@hrx/shared';
 import { canAccessEmployee } from '../../middleware/scoping.js';
 import { createAndSendNotification } from '../../services/notificationService.js';
 import { logAudit } from '../../services/auditService.js';
+import { logger } from '../../utils/logger.js';
 import mongoose from 'mongoose';
 import { Request } from 'express';
 
@@ -158,6 +159,65 @@ export async function applyLeave(
     req,
   });
 
+  // 4. Send real-time notifications to applicant, direct manager, and all HR/Admin staff
+  try {
+    const applicantEmp = await Employee.findById(employeeId);
+    const applicantName = applicantEmp
+      ? `${applicantEmp.firstName} ${applicantEmp.lastName}`
+      : user.email;
+
+    // A. Confirmation notification to applicant
+    await createAndSendNotification({
+      userId: user.id,
+      title: 'Leave Request Submitted',
+      message: `Your leave request for ${data.startDate} to ${data.endDate} (${workingDays} working ${
+        workingDays === 1 ? 'day' : 'days'
+      }) has been submitted for approval.`,
+      type: 'INFO',
+      link: '/leave',
+    });
+
+    // B. Direct Manager notification (if manager is configured)
+    if (applicantEmp?.managerId) {
+      const managerUser = await User.findOne({
+        employeeId: applicantEmp.managerId,
+        status: UserStatus.ACTIVE,
+      });
+      if (managerUser && managerUser._id.toString() !== user.id) {
+        await createAndSendNotification({
+          userId: managerUser._id,
+          title: 'New Leave Request Awaiting Approval',
+          message: `${applicantName} requested ${workingDays} working ${
+            workingDays === 1 ? 'day' : 'days'
+          } of ${leaveType.name} (${data.startDate} to ${data.endDate}).`,
+          type: 'INFO',
+          link: '/leave',
+        });
+      }
+    }
+
+    // C. All active HR and Admin users
+    const approverUsers = await User.find({
+      role: { $in: [UserRole.HR, UserRole.ADMIN] },
+      status: UserStatus.ACTIVE,
+      _id: { $ne: new mongoose.Types.ObjectId(user.id) },
+    });
+
+    for (const approver of approverUsers) {
+      await createAndSendNotification({
+        userId: approver._id,
+        title: 'New Leave Request',
+        message: `${applicantName} requested ${workingDays} working ${
+          workingDays === 1 ? 'day' : 'days'
+        } of ${leaveType.name} (${data.startDate} to ${data.endDate}).`,
+        type: 'INFO',
+        link: '/leave',
+      });
+    }
+  } catch (notifErr) {
+    logger.error({ err: notifErr }, 'Failed to dispatch leave application notifications');
+  }
+
   return leaveRequest;
 }
 
@@ -185,13 +245,25 @@ export async function approveLeave(
   }
 
   const year = parseInt(leaveRequest.startDate.split('-')[0], 10);
-  const balance = await LeaveBalance.findOne({
+  let balance = await LeaveBalance.findOne({
     employeeId: leaveRequest.employeeId,
     leaveTypeId: leaveRequest.leaveTypeId,
     year,
   });
 
-  if (!balance) throw new NotFoundError('Leave balance record not found');
+  if (!balance) {
+    const leaveType = await LeaveType.findById(leaveRequest.leaveTypeId);
+    const allocated = leaveType?.daysAllowedPerYear || 12;
+    balance = await LeaveBalance.create({
+      employeeId: leaveRequest.employeeId,
+      leaveTypeId: leaveRequest.leaveTypeId,
+      year,
+      allocatedDays: allocated,
+      usedDays: 0,
+      pendingDays: leaveRequest.daysCount,
+      remainingDays: Math.max(0, allocated - leaveRequest.daysCount),
+    });
+  }
 
   // ATOMIC BALANCE DEDUCTION:
   // Balance is permanently deducted on approval
@@ -210,7 +282,7 @@ export async function approveLeave(
     await createAndSendNotification({
       userId: employeeUser._id,
       title: 'Leave Request Approved',
-      message: `Your leave request from ${leaveRequest.startDate} to ${leaveRequest.endDate} (${leaveRequest.daysCount} days) has been approved.`,
+      message: `Your leave request from ${leaveRequest.startDate} to ${leaveRequest.endDate} (${leaveRequest.daysCount} days) has been approved by ${approver.role}.`,
       type: 'SUCCESS',
       link: '/leave',
     });

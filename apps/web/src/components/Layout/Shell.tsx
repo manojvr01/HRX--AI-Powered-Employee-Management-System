@@ -9,13 +9,19 @@ export const Shell: React.FC = () => {
     return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
   });
 
-  // Automatically adjust on window resize
+  // Automatically adjust only when viewport WIDTH actually changes (prevents mobile address-bar scroll from closing sidebar)
   useEffect(() => {
+    let lastWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
+      const currentWidth = window.innerWidth;
+      // Only react if width changed (orientation or desktop window resize), ignore height-only resizes from mobile URL bar scroll
+      if (currentWidth !== lastWidth) {
+        lastWidth = currentWidth;
+        if (currentWidth >= 1024) {
+          setSidebarOpen(true);
+        } else {
+          setSidebarOpen(false);
+        }
       }
     };
     window.addEventListener('resize', handleResize);

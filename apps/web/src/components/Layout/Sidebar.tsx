@@ -140,14 +140,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 
       {/* Sidebar Drawer */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 h-screen transition-all duration-300 flex flex-col bg-surface-low/95 backdrop-blur-2xl border-r border-white/10 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 h-[100dvh] max-h-[100dvh] transition-transform duration-300 flex flex-col bg-[#040f1c]/95 backdrop-blur-2xl border-r border-white/10 overscroll-contain ${
           isOpen
             ? 'translate-x-0 w-72 shadow-2xl lg:shadow-[0_1px_8px_rgba(0,0,0,0.35)]'
             : '-translate-x-full lg:translate-x-0 lg:w-20'
-        } ${isOpen ? 'lg:w-72' : 'lg:w-20'} lg:static`}
+        } ${isOpen ? 'lg:w-72' : 'lg:w-20'} lg:static lg:h-screen lg:max-h-screen`}
       >
         {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-white/10 gap-3">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-white/10 gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-600/30 ring-1 ring-white/20 flex-shrink-0">
               <Sparkles className="w-5 h-5 text-white" />
@@ -185,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 
         {/* Role Badge Indicator */}
         {user && isOpen && (
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 shrink-0">
             <div
               className={`px-3.5 py-2 rounded-xl border ${currentRoleStyle.bg} ${currentRoleStyle.border} flex items-center justify-between backdrop-blur-md`}
             >
@@ -201,7 +201,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
         )}
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto overscroll-contain touch-pan-y">
           {navItems
             .filter((item) => item.show)
             .map((item) => {
@@ -235,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 
         {/* System Sync / Footer */}
         {isOpen && (
-          <div className="p-4 mx-3 mb-2 rounded-xl bg-surface-lowest/70 border border-white/5 space-y-2">
+          <div className="p-4 mx-3 mb-2 rounded-xl bg-surface-lowest/70 border border-white/5 space-y-2 shrink-0">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400 font-medium">System Sync</span>
               <span className="text-emerald-400 font-mono font-semibold">Live (18ms)</span>
@@ -246,12 +246,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
           </div>
         )}
 
-        {/* Footer / User Profile & Logout */}
-        <div className="p-3 border-t border-white/10">
+        {/* Footer / User Profile & Logout - Sticky & always accessible */}
+        <div className="p-3 border-t border-white/10 shrink-0 bg-[#040f1c]/95 sticky bottom-0 z-10">
           <button
             onClick={logout}
             id="btn-logout"
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors active:scale-95"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             {isOpen && <span>Sign Out</span>}

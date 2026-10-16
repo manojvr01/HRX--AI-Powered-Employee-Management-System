@@ -35,14 +35,14 @@ export const NotificationCenter: React.FC = () => {
       <button
         id="btn-notifications"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+        className="relative p-2 sm:p-2.5 rounded-xl text-slate-300 hover:text-white bg-surface-container/60 hover:bg-surface-high border border-white/10 transition-all flex items-center justify-center shadow-sm"
         aria-label="View notifications"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
         {unreadCount > 0 && (
           <span
             id="badge-unread-count"
-            className="absolute top-1 right-1 px-1.5 py-0.5 min-w-[18px] text-[10px] font-bold rounded-full bg-indigo-500 text-white ring-2 ring-slate-950 flex items-center justify-center animate-pulse"
+            className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] text-[10px] font-extrabold rounded-full bg-gradient-to-r from-indigo-500 to-rose-500 text-white ring-2 ring-[#020b14] flex items-center justify-center shadow-glow animate-pulse font-mono"
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
@@ -52,7 +52,7 @@ export const NotificationCenter: React.FC = () => {
       {isOpen && (
         <div
           id="popover-notifications"
-          className="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl glass-panel border border-slate-700/80 shadow-2xl bg-slate-900/95 backdrop-blur-xl z-50 overflow-hidden"
+          className="fixed inset-x-3 top-16 sm:absolute sm:inset-auto sm:right-0 sm:mt-3 sm:w-96 rounded-2xl glass-panel border border-white/15 shadow-2xl bg-[#030d1a]/95 backdrop-blur-2xl z-50 overflow-hidden"
         >
           {/* Header */}
           <div className="p-4 border-b border-slate-800 flex items-center justify-between">

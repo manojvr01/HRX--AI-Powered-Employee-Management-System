@@ -134,10 +134,20 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsConnected(false);
     });
 
-    newSocket.on('notification:new', (notif: INotification) => {
-      setNotifications((prev) => [notif, ...prev]);
+    newSocket.on('notification:new', (notif: any) => {
+      const normalizedNotif: INotification = {
+        _id: notif._id || notif.id || String(Date.now()),
+        userId: notif.userId || user?.id || '',
+        title: notif.title || 'Notification',
+        message: notif.message || '',
+        type: notif.type || 'INFO',
+        link: notif.link,
+        isRead: false,
+        createdAt: notif.createdAt || new Date().toISOString(),
+      };
+      setNotifications((prev) => [normalizedNotif, ...prev.filter((n) => n._id !== normalizedNotif._id)]);
       setUnreadCount((prev) => prev + 1);
-      addToast(notif);
+      addToast(normalizedNotif);
     });
 
     socketRef.current = newSocket;

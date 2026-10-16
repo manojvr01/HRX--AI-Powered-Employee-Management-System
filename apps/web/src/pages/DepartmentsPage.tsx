@@ -10,7 +10,19 @@ import {
   X,
   AlertCircle,
   Briefcase,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { Modal } from '../components/ui/Modal';
 
 export const DepartmentsPage: React.FC = () => {
   const { can } = useAuth();
@@ -65,28 +77,35 @@ export const DepartmentsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-300">
       {/* Title & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-indigo-400" />
-            Departments
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+              Organizational Hierarchy
+            </span>
+            <span className="text-xs text-text-muted">Business Units & Scope</span>
+          </div>
+          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
+            <Building2 className="w-7 h-7 text-primary" />
+            Departments & Divisions
           </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Operational business units, team structures, and employee counts.
+          <p className="text-sm text-text-secondary mt-1">
+            Operational business units, team structures, headcount distribution, and unit leads
           </p>
         </div>
 
         {can(Permission.DEPARTMENTS_MANAGE) && (
-          <button
+          <Button
             onClick={() => setIsModalOpen(true)}
             id="btn-add-department"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition shadow-lg shadow-indigo-600/30"
+            variant="primary"
+            className="shadow-glow"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 mr-2" />
             Add Department
-          </button>
+          </Button>
         )}
       </div>
 
@@ -94,46 +113,50 @@ export const DepartmentsPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-44 glass-panel rounded-2xl animate-pulse" />
+            <div key={i} className="h-48 glass-card rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : departments.length === 0 ? (
-        <div className="glass-panel p-12 text-center text-slate-400 rounded-2xl">
-          No active departments found.
-        </div>
+        <Card className="p-12 text-center text-text-muted">
+          No active departments configured in the organization directory.
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {departments.map((dept) => (
             <div
               key={dept._id}
-              className="glass-panel p-6 rounded-2xl space-y-4 hover:border-indigo-500/30 transition flex flex-col justify-between"
+              className="glass-card p-6 rounded-2xl border border-white/[0.08] hover:border-primary/40 transition-all duration-300 flex flex-col justify-between group"
             >
               <div>
                 <div className="flex items-start justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-sm">
+                  <div className="w-11 h-11 rounded-xl bg-primary/15 text-primary-light border border-primary/25 flex items-center justify-center font-bold text-sm shadow-glow group-hover:scale-105 transition-transform">
                     <Building2 className="w-5 h-5" />
                   </div>
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-indigo-300">
+                  <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-surface-highest/60 border border-white/[0.08] text-primary-light">
                     {dept.code}
                   </span>
                 </div>
 
-                <h2 className="text-lg font-bold text-white mt-3">{dept.name}</h2>
-                <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-                  {dept.description || 'No description provided.'}
+                <h2 className="text-lg font-bold text-white mt-4 group-hover:text-primary-light transition-colors">
+                  {dept.name}
+                </h2>
+                <p className="text-xs text-text-muted mt-1.5 line-clamp-2 leading-relaxed">
+                  {dept.description || 'No detailed operational description provided.'}
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-slate-400">
-                  <Users className="w-4 h-4 text-emerald-400" />
-                  <span className="font-semibold text-white">{dept.employeeCount || 0}</span>
-                  <span>staff</span>
+              <div className="pt-4 mt-6 border-t border-white/[0.06] flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-secondary/15 flex items-center justify-center text-secondary">
+                    <Users className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="font-bold text-white font-mono">{dept.employeeCount || 0}</span>
+                  <span className="text-text-muted">personnel</span>
                 </div>
 
-                <div className="text-slate-400 text-right">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Head</span>
-                  <span className="text-slate-200 font-medium">
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-text-muted block">Department Head</span>
+                  <span className="text-text-secondary font-medium text-xs">
                     {dept.headId
                       ? `${dept.headId.firstName} ${dept.headId.lastName}`
                       : 'Unassigned'}
@@ -146,90 +169,85 @@ export const DepartmentsPage: React.FC = () => {
       )}
 
       {/* Add Department Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md rounded-2xl p-6 space-y-5 border border-slate-700 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-lg font-bold text-white">Create Department</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {modalError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{modalError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateDepartment} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">
-                  Department Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  id="input-department-name"
-                  placeholder="e.g. Finance & Accounting"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">
-                  Department Code *
-                </label>
-                <input
-                  type="text"
-                  required
-                  id="input-department-code"
-                  placeholder="e.g. FIN"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono uppercase"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  id="textarea-department-description"
-                  placeholder="Brief description of department responsibility..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                />
-              </div>
-
-              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  id="btn-submit-create-department"
-                  disabled={modalLoading}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold"
-                >
-                  {modalLoading ? 'Creating...' : 'Create Department'}
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Create Department"
+        description="Establish a new business unit and team code for staff classification."
+        maxWidth="md"
+      >
+        {modalError && (
+          <div className="p-3.5 rounded-xl bg-error/10 border border-error/30 text-error-light text-xs flex items-center gap-2 mb-4">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-error" />
+            <span>{modalError}</span>
           </div>
-        </div>
-      )}
+        )}
+
+        <form onSubmit={handleCreateDepartment} className="space-y-4 text-xs">
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+              Department Name *
+            </label>
+            <input
+              type="text"
+              required
+              id="input-department-name"
+              placeholder="e.g. Finance & Accounting"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-surface-highest/60 border border-white/[0.08] text-xs text-white focus:outline-none focus:border-primary transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+              Department Code *
+            </label>
+            <input
+              type="text"
+              required
+              id="input-department-code"
+              placeholder="e.g. FIN"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-surface-highest/60 border border-white/[0.08] text-xs text-white font-mono uppercase focus:outline-none focus:border-primary transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+              Description
+            </label>
+            <textarea
+              rows={3}
+              id="textarea-department-description"
+              placeholder="Brief description of department responsibility..."
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-surface-highest/60 border border-white/[0.08] text-xs text-white placeholder-text-muted focus:outline-none focus:border-primary transition"
+            />
+          </div>
+
+          <div className="pt-4 flex items-center justify-end gap-3 border-t border-white/[0.08]">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              id="btn-submit-create-department"
+              variant="primary"
+              disabled={modalLoading}
+            >
+              {modalLoading ? 'Creating...' : 'Create Department'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
+

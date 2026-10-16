@@ -9,10 +9,17 @@ import {
   Save,
   Clock,
   Globe,
-  Building,
+  Building2,
+  CalendarDays,
+  ShieldCheck,
+  Coins,
+  Check,
+  X,
+  Sparkles,
 } from 'lucide-react';
 import { apiRequest } from '../lib/api';
 import { IOrgSettings, IHoliday } from '@hrx/shared';
+import { Card, Badge, Button, Input, StatCard } from '../components/ui';
 
 export const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'org' | 'holidays'>('org');
@@ -69,7 +76,7 @@ export const SettingsPage: React.FC = () => {
       });
       if (res.data) {
         setSettings(res.data);
-        setFeedback({ type: 'success', message: 'Organization settings updated successfully!' });
+        setFeedback({ type: 'success', message: 'Enterprise organization policies updated successfully!' });
       }
     } catch (err: any) {
       setFeedback({ type: 'error', message: err?.message || 'Failed to update settings' });
@@ -102,7 +109,7 @@ export const SettingsPage: React.FC = () => {
       setHolidayDate('');
       setHolidayDescription('');
       setHolidayOptional(false);
-      setFeedback({ type: 'success', message: 'Holiday added successfully!' });
+      setFeedback({ type: 'success', message: 'Holiday added to official calendar successfully!' });
       await loadData();
     } catch (err: any) {
       setHolidayModalError(err?.message || 'Failed to create holiday');
@@ -112,7 +119,7 @@ export const SettingsPage: React.FC = () => {
   const handleDeleteHoliday = async (id: string) => {
     try {
       await apiRequest(`/settings/holidays/${id}`, { method: 'DELETE' });
-      setFeedback({ type: 'success', message: 'Holiday removed successfully' });
+      setFeedback({ type: 'success', message: 'Holiday removed from calendar' });
       await loadData();
     } catch (err: any) {
       setFeedback({ type: 'error', message: err?.message || 'Failed to delete holiday' });
@@ -128,166 +135,258 @@ export const SettingsPage: React.FC = () => {
   };
 
   const daysOfWeek = [
-    { label: 'Sun', value: 0 },
-    { label: 'Mon', value: 1 },
-    { label: 'Tue', value: 2 },
-    { label: 'Wed', value: 3 },
-    { label: 'Thu', value: 4 },
-    { label: 'Fri', value: 5 },
-    { label: 'Sat', value: 6 },
+    { label: 'Sunday', short: 'Sun', value: 0 },
+    { label: 'Monday', short: 'Mon', value: 1 },
+    { label: 'Tuesday', short: 'Tue', value: 2 },
+    { label: 'Wednesday', short: 'Wed', value: 3 },
+    { label: 'Thursday', short: 'Thu', value: 4 },
+    { label: 'Friday', short: 'Fri', value: 5 },
+    { label: 'Saturday', short: 'Sat', value: 6 },
   ];
+
+  const mandatoryCount = holidays.filter((h) => !h.isOptional).length;
+  const optionalCount = holidays.filter((h) => h.isOptional).length;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black tracking-tight text-white">System & Org Settings</h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Configure organization working schedules, holiday calendars, and global attendance rules
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-primary-container/20 text-primary border border-primary/30">
+              Enterprise Governance
+            </span>
+            <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+              <ShieldCheck className="w-3.5 h-3.5" /> Policy Engine Active
+            </span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <Sliders className="w-5 h-5" />
+            </div>
+            System & Enterprise Settings
+          </h1>
+          <p className="text-xs md:text-sm text-slate-400 mt-1 max-w-2xl">
+            Configure working schedules, automated late arrival thresholds, payroll currency, and statutory holidays.
+          </p>
+        </div>
+
+        {activeTab === 'holidays' && (
+          <Button
+            id="btn-add-holiday"
+            variant="primary"
+            size="sm"
+            onClick={() => setIsAddHolidayModalOpen(true)}
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Add Holiday
+          </Button>
+        )}
       </div>
 
-      {/* Global Alerts */}
+      {/* Global Alerts / Feedback */}
       {feedback && (
         <div
-          className={`p-4 rounded-xl text-sm flex items-center gap-3 border ${
+          className={`p-4 rounded-xl text-xs flex items-center gap-3 border animate-in slide-in-from-top-2 duration-200 ${
             feedback.type === 'success'
               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
               : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
           }`}
         >
           {feedback.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
           ) : (
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
           )}
-          <span>{feedback.message}</span>
+          <span className="font-medium">{feedback.message}</span>
         </div>
       )}
 
       {/* Tab Selectors */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-outline-variant/20 pb-2">
         <button
           onClick={() => setActiveTab('org')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
             activeTab === 'org'
-              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
+              : 'text-slate-400 hover:text-white hover:bg-surface-container-high/40'
           }`}
         >
-          <Sliders className="w-4 h-4" />
-          Organization Rules
+          <Building2 className="w-4 h-4" />
+          Organization & Working Rules
         </button>
         <button
           onClick={() => setActiveTab('holidays')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
             activeTab === 'holidays'
-              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
+              : 'text-slate-400 hover:text-white hover:bg-surface-container-high/40'
           }`}
         >
           <Calendar className="w-4 h-4" />
-          Holiday Calendar ({holidays.length})
+          Holiday Calendar
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+              activeTab === 'holidays'
+                ? 'bg-on-primary/20 text-on-primary'
+                : 'bg-surface-container-high text-slate-400'
+            }`}
+          >
+            {holidays.length}
+          </span>
         </button>
       </div>
 
-      {/* Tab 1: Org Settings */}
-      {activeTab === 'org' && settings && (
-        <form onSubmit={handleSaveSettings} className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Company Name</label>
-              <input
-                type="text"
-                value={settings.companyName}
-                onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
-                required
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
-              />
+      {isLoading ? (
+        <div className="py-24 text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-400 font-mono">Loading enterprise configuration...</p>
+        </div>
+      ) : activeTab === 'org' && settings ? (
+        <form onSubmit={handleSaveSettings} className="space-y-6">
+          {/* Section 1: Enterprise Profile */}
+          <Card variant="glass" className="p-6 space-y-5 border-outline-variant/30">
+            <div className="flex items-center gap-2 border-b border-outline-variant/20 pb-3">
+              <Building2 className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-bold text-white tracking-wide">Enterprise Identity & Locale</h2>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Timezone</label>
-              <select
-                value={settings.timezone}
-                onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
-              >
-                <option value="Asia/Kolkata">Asia/Kolkata (IST +05:30)</option>
-                <option value="America/New_York">America/New_York (EST -05:00)</option>
-                <option value="Europe/London">Europe/London (GMT +00:00)</option>
-                <option value="UTC">UTC (Universal Time)</option>
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Company Legal Name</label>
+                <input
+                  type="text"
+                  value={settings.companyName}
+                  onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
+                  required
+                  placeholder="e.g. Acme Global Corporation"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/30 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-secondary" /> Operating Timezone
+                </label>
+                <select
+                  value={settings.timezone}
+                  onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/30 text-xs text-white focus:outline-none focus:border-primary/50 transition-colors font-mono"
+                >
+                  <option value="Asia/Kolkata">Asia/Kolkata (IST +05:30)</option>
+                  <option value="America/New_York">America/New_York (EST -05:00)</option>
+                  <option value="Europe/London">Europe/London (GMT +00:00)</option>
+                  <option value="UTC">UTC (Universal Time)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Coins className="w-3.5 h-3.5 text-amber-400" /> Default Currency Code
+                </label>
+                <input
+                  type="text"
+                  value={settings.currency}
+                  onChange={(e) => setSettings({ ...settings, currency: e.target.value.toUpperCase() })}
+                  required
+                  placeholder="e.g. INR, USD, EUR"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/30 text-xs text-white focus:outline-none focus:border-primary/50 transition-colors font-mono"
+                />
+              </div>
+            </div>
+          </Card>
+
+          {/* Section 2: Working Hours & Attendance Rules */}
+          <Card variant="glass" className="p-6 space-y-5 border-outline-variant/30">
+            <div className="flex items-center gap-2 border-b border-outline-variant/20 pb-3">
+              <Clock className="w-4 h-4 text-secondary" />
+              <h2 className="text-sm font-bold text-white tracking-wide">Working Hours & Attendance Tolerance</h2>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Late Grace Threshold (Minutes)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="120"
-                value={settings.lateThresholdMinutes}
-                onChange={(e) =>
-                  setSettings({ ...settings, lateThresholdMinutes: Number(e.target.value) })
-                }
-                required
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Workday Shift Start (Hour 0-23)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={settings.workDayStartHour}
+                    onChange={(e) =>
+                      setSettings({ ...settings, workDayStartHour: Number(e.target.value) })
+                    }
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/30 text-xs text-white focus:outline-none focus:border-primary/50 font-mono transition-colors"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-500 font-mono">
+                    :00 hrs
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">Default start time e.g. 9 for 09:00 AM</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Workday Shift End (Hour 0-23)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={settings.workDayEndHour}
+                    onChange={(e) =>
+                      setSettings({ ...settings, workDayEndHour: Number(e.target.value) })
+                    }
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/30 text-xs text-white focus:outline-none focus:border-primary/50 font-mono transition-colors"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-500 font-mono">
+                    :00 hrs
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">Default checkout time e.g. 18 for 06:00 PM</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Late Grace Threshold (Minutes)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="120"
+                    value={settings.lateThresholdMinutes}
+                    onChange={(e) =>
+                      setSettings({ ...settings, lateThresholdMinutes: Number(e.target.value) })
+                    }
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/30 text-xs text-white focus:outline-none focus:border-primary/50 font-mono transition-colors"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-500 font-mono">
+                    mins
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">Punches after this are flagged as Late Arrival</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Section 3: Official Work Week */}
+          <Card variant="glass" className="p-6 space-y-5 border-outline-variant/30">
+            <div className="flex items-center gap-2 border-b border-outline-variant/20 pb-3">
+              <CalendarDays className="w-4 h-4 text-emerald-400" />
+              <h2 className="text-sm font-bold text-white tracking-wide">Official Working Days of the Week</h2>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Currency Code</label>
-              <input
-                type="text"
-                value={settings.currency}
-                onChange={(e) => setSettings({ ...settings, currency: e.target.value.toUpperCase() })}
-                required
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-              />
-            </div>
+            <p className="text-xs text-slate-400">
+              Selected days are treated as standard working business days. Unselected days (weekends) are exempt from leave deductions.
+            </p>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Workday Start Hour (0-23)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="23"
-                value={settings.workDayStartHour}
-                onChange={(e) =>
-                  setSettings({ ...settings, workDayStartHour: Number(e.target.value) })
-                }
-                required
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Workday End Hour (0-23)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="23"
-                value={settings.workDayEndHour}
-                onChange={(e) =>
-                  setSettings({ ...settings, workDayEndHour: Number(e.target.value) })
-                }
-                required
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Working Days of Week
-            </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
               {daysOfWeek.map((d) => {
                 const active = settings.workWeekDays?.includes(d.value);
                 return (
@@ -295,90 +394,126 @@ export const SettingsPage: React.FC = () => {
                     type="button"
                     key={d.value}
                     onClick={() => toggleWorkDay(d.value)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition border ${
+                    className={`py-3 px-3 rounded-xl text-xs font-bold transition-all border flex flex-col items-center gap-1.5 ${
                       active
-                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-md'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                        ? 'bg-primary/20 border-primary text-white shadow-lg shadow-primary/20'
+                        : 'bg-surface-container-lowest/60 border-outline-variant/20 text-slate-400 hover:text-white hover:bg-surface-container-high/40'
                     }`}
                   >
-                    {d.label}
+                    <span className="text-[11px] font-mono tracking-wider uppercase text-slate-400">
+                      {d.short}
+                    </span>
+                    <span className="text-sm font-semibold">{d.label}</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${
+                        active
+                          ? 'bg-primary text-on-primary'
+                          : 'bg-surface-container-high text-slate-500'
+                      }`}
+                    >
+                      {active ? 'Working' : 'Off'}
+                    </span>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </Card>
 
-          <div className="flex justify-end pt-4 border-t border-slate-800">
-            <button
+          {/* Form Action */}
+          <div className="flex justify-end pt-2">
+            <Button
               id="btn-save-settings"
               type="submit"
+              variant="primary"
+              size="md"
               disabled={isSaving}
-              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+              icon={<Save className="w-4 h-4" />}
             >
-              <Save className="w-4 h-4" />
-              {isSaving ? 'Saving...' : 'Save Settings'}
-            </button>
+              {isSaving ? 'Applying Settings...' : 'Save Enterprise Settings'}
+            </Button>
           </div>
         </form>
-      )}
-
-      {/* Tab 2: Holidays */}
-      {activeTab === 'holidays' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-slate-400">
-              Official organization holidays are automatically excluded from leave working-day deductions.
-            </p>
-            <button
-              id="btn-add-holiday"
-              onClick={() => setIsAddHolidayModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-indigo-600/20"
-            >
-              <Plus className="w-4 h-4" />
-              Add Holiday
-            </button>
+      ) : activeTab === 'holidays' ? (
+        <div className="space-y-6">
+          {/* Stat highlights for holidays */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard
+              title="Official Calendar Days"
+              value={holidays.length}
+              subtitle="Scheduled holiday breaks"
+              icon={<Calendar className="w-5 h-5 text-primary" />}
+              iconColor="primary"
+            />
+            <StatCard
+              title="Mandatory Closures"
+              value={mandatoryCount}
+              subtitle="Full organization shutdown"
+              icon={<CheckCircle2 className="w-5 h-5 text-emerald-400" />}
+              iconColor="secondary"
+            />
+            <StatCard
+              title="Optional / Restricted"
+              value={optionalCount}
+              subtitle="Floating individual choice"
+              icon={<Sparkles className="w-5 h-5 text-amber-400" />}
+              iconColor="tertiary"
+            />
           </div>
 
-          <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+          {/* Holiday List Table */}
+          <Card variant="glass" className="overflow-hidden border-outline-variant/30 p-0">
+            <div className="px-6 py-4 border-b border-outline-variant/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-surface-container-lowest/50">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-primary" />
+                <h2 className="text-sm font-bold text-white tracking-wide">Statutory Holiday Schedule</h2>
+              </div>
+              <p className="text-xs text-slate-400">
+                Official holidays are automatically deducted from billable leave calculations.
+              </p>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-800 bg-slate-900/40 text-slate-400 font-mono uppercase text-[11px]">
-                    <th className="py-3 px-4">Holiday Name</th>
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Type</th>
-                    <th className="py-3 px-4">Description</th>
-                    <th className="py-3 px-4 text-right">Action</th>
+                  <tr className="border-b border-outline-variant/20 bg-surface-container-lowest/70 text-slate-400 font-mono uppercase text-[11px] tracking-wider">
+                    <th className="py-3.5 px-6">Holiday Title</th>
+                    <th className="py-3.5 px-6">Calendar Date</th>
+                    <th className="py-3.5 px-6">Classification</th>
+                    <th className="py-3.5 px-6">Description / Notes</th>
+                    <th className="py-3.5 px-6 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/50">
+                <tbody className="divide-y divide-outline-variant/10 text-slate-300">
                   {holidays.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-slate-500 text-xs">
-                        No holidays registered for this calendar year.
+                      <td colSpan={5} className="py-16 text-center text-slate-500 text-xs">
+                        No statutory holidays scheduled for this calendar cycle. Click "Add Holiday" to register one.
                       </td>
                     </tr>
                   ) : (
                     holidays.map((h) => (
-                      <tr key={h._id} className="hover:bg-slate-800/30 transition">
-                        <td className="py-3 px-4 font-bold text-white">{h.name}</td>
-                        <td className="py-3 px-4 text-indigo-400 font-mono">{h.date}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                              h.isOptional
-                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                            }`}
-                          >
-                            {h.isOptional ? 'Optional' : 'Mandatory'}
-                          </span>
+                      <tr key={h._id} className="hover:bg-primary/5 transition-colors group">
+                        <td className="py-4 px-6 font-bold text-white whitespace-nowrap">
+                          {h.name}
                         </td>
-                        <td className="py-3 px-4 text-slate-400">{h.description || '-'}</td>
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-4 px-6 font-mono text-primary font-semibold whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <CalendarDays className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                            <span>{h.date}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          <Badge variant={h.isOptional ? 'warning' : 'success'}>
+                            {h.isOptional ? 'Optional / Floating' : 'Mandatory Closure'}
+                          </Badge>
+                        </td>
+                        <td className="py-4 px-6 text-slate-400 max-w-sm truncate text-xs">
+                          {h.description || '-'}
+                        </td>
+                        <td className="py-4 px-6 text-right whitespace-nowrap">
                           <button
                             onClick={() => handleDeleteHoliday(h._id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
                             title="Delete holiday"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -390,15 +525,26 @@ export const SettingsPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </div>
-      )}
+      ) : null}
 
       {/* Add Holiday Modal */}
       {isAddHolidayModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel rounded-2xl border border-slate-800 w-full max-w-md p-6 bg-slate-900 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-white">Add New Holiday</h3>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                <h3 className="text-base font-bold text-white">Add Statutory Holiday</h3>
+              </div>
+              <button
+                onClick={() => setIsAddHolidayModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-container-high transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             {holidayModalError && (
               <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
@@ -413,11 +559,11 @@ export const SettingsPage: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Independence Day"
+                  placeholder="e.g. Independence Day, Annual Shutdown"
                   value={holidayName}
                   onChange={(e) => setHolidayName(e.target.value)}
                   required
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/30 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
 
@@ -428,7 +574,7 @@ export const SettingsPage: React.FC = () => {
                   value={holidayDate}
                   onChange={(e) => setHolidayDate(e.target.value)}
                   required
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/30 text-xs text-white focus:outline-none focus:border-primary/50 font-mono transition-colors"
                 />
               </div>
 
@@ -436,41 +582,43 @@ export const SettingsPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
                 <input
                   type="text"
-                  placeholder="e.g. National holiday celebration"
+                  placeholder="e.g. Official national observance"
                   value={holidayDescription}
                   onChange={(e) => setHolidayDescription(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/30 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
                   id="opt-holiday"
                   checked={holidayOptional}
                   onChange={(e) => setHolidayOptional(e.target.checked)}
-                  className="rounded border-slate-800 text-indigo-600 focus:ring-0"
+                  className="rounded border-outline-variant/40 bg-surface-container-low text-primary focus:ring-0 w-4 h-4"
                 />
-                <label htmlFor="opt-holiday" className="text-xs text-slate-300">
-                  Optional / Restricted holiday
+                <label htmlFor="opt-holiday" className="text-xs text-slate-300 cursor-pointer">
+                  Optional / Restricted (Floating) holiday
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/20">
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => setIsAddHolidayModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   id="btn-confirm-add-holiday"
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition"
+                  variant="primary"
+                  size="sm"
                 >
-                  Add Holiday
-                </button>
+                  Save Holiday
+                </Button>
               </div>
             </form>
           </div>

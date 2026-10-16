@@ -31,11 +31,14 @@ export async function createAndSendNotification(
     // Real-time broadcast to the specific user's socket room
     try {
       emitToUser(userIdStr, 'notification:new', {
+        _id: notification._id.toString(),
         id: notification._id.toString(),
+        userId: userIdStr,
         title: notification.title,
         message: notification.message,
         type: notification.type,
         link: notification.link,
+        isRead: false,
         createdAt: notification.createdAt,
       });
     } catch (err) {

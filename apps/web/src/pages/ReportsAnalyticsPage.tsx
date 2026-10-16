@@ -10,7 +10,19 @@ import {
   DollarSign,
   Star,
   FileSpreadsheet,
+  TrendingUp,
+  Sparkles,
 } from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { StatCard } from '../components/ui/StatCard';
 
 export function ReportsAnalyticsPage() {
   const { user } = useAuth();
@@ -74,160 +86,172 @@ export function ReportsAnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <BarChart3 className="h-7 w-7 text-indigo-400" />
-          Analytics & Report Center
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+            Intelligence & Auditing
+          </span>
+          <span className="text-xs text-text-muted">Real-time Metrics Aggregation</span>
+        </div>
+        <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
+          <BarChart3 className="h-7 w-7 text-primary" />
+          Analytics & Intelligence Center
         </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          High-level operational metrics and compliance report exports.
+        <p className="text-sm text-text-secondary mt-1">
+          High-level operational metrics, performance distribution, and compliance CSV exports
         </p>
       </div>
 
       {/* Analytics Cards */}
       {loading ? (
-        <div className="p-8 text-center text-slate-400 text-sm">Loading analytics metrics...</div>
+        <div className="p-12 text-center text-text-muted font-mono text-xs glass-card">
+          Loading analytics metrics...
+        </div>
       ) : metrics ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
-              <span>Scoped Headcount</span>
-              <Users className="h-4 w-4 text-indigo-400" />
-            </div>
-            <div className="text-2xl font-bold text-white">{metrics.headcount?.total || 0}</div>
-            <div className="text-xs text-emerald-400">
-              {metrics.headcount?.active || 0} currently active
-            </div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
-              <span>Attendance Rate (30d)</span>
-              <CalendarCheck className="h-4 w-4 text-emerald-400" />
-            </div>
-            <div className="text-2xl font-bold text-white">
-              {metrics.attendance?.ratePercentage || 0}%
-            </div>
-            <div className="text-xs text-slate-400">
-              {metrics.attendance?.recordsInLast30Days || 0} logs recorded
-            </div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
-              <span>Leave Summary</span>
-              <CalendarDays className="h-4 w-4 text-amber-400" />
-            </div>
-            <div className="text-2xl font-bold text-white">
-              {metrics.leaves?.APPROVED || 0}
-            </div>
-            <div className="text-xs text-amber-400">
-              {metrics.leaves?.PENDING || 0} pending review
-            </div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-2">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
-              <span>Net Payroll Outflow</span>
-              <DollarSign className="h-4 w-4 text-cyan-400" />
-            </div>
-            <div className="text-2xl font-bold text-white">
-              ${(metrics.payroll?.totalNet || 0).toLocaleString()}
-            </div>
-            <div className="text-xs text-slate-400">
-              {metrics.payroll?.processedCount || 0} records processed
-            </div>
-          </div>
+          <StatCard
+            title="Scoped Headcount"
+            value={metrics.headcount?.total || 0}
+            icon={<Users className="w-5 h-5 text-primary" />}
+            subtitle={`${metrics.headcount?.active || 0} currently active`}
+            iconColor="primary"
+          />
+          <StatCard
+            title="Attendance Rate (30d)"
+            value={`${metrics.attendance?.ratePercentage || 0}%`}
+            icon={<CalendarCheck className="w-5 h-5 text-secondary" />}
+            subtitle={`${metrics.attendance?.recordsInLast30Days || 0} logs recorded`}
+            iconColor="secondary"
+          />
+          <StatCard
+            title="Leave Summary"
+            value={metrics.leaves?.APPROVED || 0}
+            icon={<CalendarDays className="w-5 h-5 text-tertiary" />}
+            subtitle={`${metrics.leaves?.PENDING || 0} pending review`}
+            iconColor="tertiary"
+          />
+          <StatCard
+            title="Net Payroll Outflow"
+            value={`$${(metrics.payroll?.totalNet || 0).toLocaleString()}`}
+            icon={<DollarSign className="w-5 h-5 text-secondary" />}
+            subtitle={`${metrics.payroll?.processedCount || 0} cycles processed`}
+            iconColor="secondary"
+          />
         </div>
       ) : null}
 
       {/* Performance Ratings Distribution */}
       {metrics?.performance && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-white flex items-center gap-2">
-              <Star className="h-4 w-4 text-amber-400" />
-              Performance Rating Distribution
-            </h2>
-            <span className="text-xs text-slate-400">
-              {metrics.performance.totalReviews} total appraisals
-            </span>
-          </div>
-          <div className="grid grid-cols-5 gap-3 text-center text-xs">
-            {metrics.performance.ratingDistribution?.map((item: any) => (
-              <div key={item.stars} className="bg-slate-800/40 p-3 rounded-lg border border-slate-800">
-                <div className="flex justify-center text-amber-400 mb-1">
-                  {Array.from({ length: item.stars }).map((_, i) => (
-                    <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <div className="text-lg font-bold text-white">{item.count}</div>
-                <div className="text-[10px] text-slate-500">reviews</div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-tertiary" />
+                  Performance Rating Distribution
+                </CardTitle>
+                <CardDescription>
+                  Aggregated star appraisal distribution across team cycles
+                </CardDescription>
               </div>
-            ))}
-          </div>
-        </div>
+              <Badge variant="warning">
+                {metrics.performance.totalReviews} total appraisals
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-5 gap-3 text-center text-xs">
+              {metrics.performance.ratingDistribution?.map((item: any) => (
+                <div
+                  key={item.stars}
+                  className="bg-surface-highest/40 p-4 rounded-xl border border-white/[0.06] hover:border-tertiary/40 transition-colors"
+                >
+                  <div className="flex justify-center text-tertiary mb-1.5 gap-0.5">
+                    {Array.from({ length: item.stars }).map((_, i) => (
+                      <Star key={i} className="h-3 w-3 fill-tertiary text-tertiary" />
+                    ))}
+                  </div>
+                  <div className="text-xl font-black text-white font-mono">{item.count}</div>
+                  <div className="text-[10px] text-text-muted mt-0.5">reviews</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* CSV Export Center */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm space-y-5">
-        <div className="flex items-center gap-2">
-          <FileSpreadsheet className="h-5 w-5 text-indigo-400" />
-          <h2 className="text-base font-semibold text-white">Data Export Center (CSV)</h2>
-        </div>
-        <p className="text-xs text-slate-400">
-          Generate encrypted, audit-logged CSV exports strictly scoped to your authorized role and team visibility.
-        </p>
-
-        <form onSubmit={handleExport} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end text-xs">
-          <div>
-            <label className="block text-slate-300 mb-1">Report Dataset</label>
-            <select
-              value={exportType}
-              onChange={(e) => setExportType(e.target.value as any)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white"
-            >
-              <option value="employees">Employees Directory</option>
-              <option value="attendance">Attendance Records</option>
-              <option value="payroll">Payroll Master</option>
-              <option value="leaves">Leave Applications</option>
-            </select>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5 text-primary" />
+            <div>
+              <CardTitle>Data Export Center (CSV)</CardTitle>
+              <CardDescription>
+                Generate encrypted, audit-logged CSV exports strictly scoped to your authorized role and team visibility
+              </CardDescription>
+            </div>
           </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleExport} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end text-xs">
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                Report Dataset *
+              </label>
+              <select
+                value={exportType}
+                onChange={(e) => setExportType(e.target.value as any)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-surface-highest/60 border border-white/[0.08] text-xs text-white focus:outline-none focus:border-primary transition"
+              >
+                <option value="employees" className="bg-surface-darker text-white">Employees Directory</option>
+                <option value="attendance" className="bg-surface-darker text-white">Attendance Records</option>
+                <option value="payroll" className="bg-surface-darker text-white">Payroll Master</option>
+                <option value="leaves" className="bg-surface-darker text-white">Leave Applications</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-slate-300 mb-1">Start Date (Optional)</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                Start Date (Optional)
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-surface-highest/60 border border-white/[0.08] text-xs text-white font-mono focus:outline-none focus:border-primary transition"
+              />
+            </div>
 
-          <div>
-            <label className="block text-slate-300 mb-1">End Date (Optional)</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                End Date (Optional)
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-surface-highest/60 border border-white/[0.08] text-xs text-white font-mono focus:outline-none focus:border-primary transition"
+              />
+            </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={exporting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg font-medium shadow-md shadow-indigo-600/20 transition-all"
-            >
-              <Download className="h-4 w-4" />
-              {exporting ? 'Generating...' : 'Download CSV'}
-            </button>
-          </div>
-        </form>
-      </div>
+            <div>
+              <Button
+                type="submit"
+                disabled={exporting}
+                variant="primary"
+                className="w-full shadow-glow"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {exporting ? 'Generating...' : 'Download CSV'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+

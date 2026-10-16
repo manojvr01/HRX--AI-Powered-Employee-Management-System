@@ -16,6 +16,17 @@ import {
   AlertCircle,
   X,
 } from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Button,
+  Badge,
+  Input,
+  Modal,
+} from '../components/ui';
 
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -130,78 +141,118 @@ export const EmployeeDetailPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Back button */}
+      {/* 1. Breadcrumb Back Link */}
       <button
         onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition"
+        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition group"
       >
-        <ArrowLeft className="w-4 h-4" />
-        Back
+        <span className="p-1 rounded-lg bg-surface-container border border-white/10 group-hover:bg-surface-high">
+          <ArrowLeft className="w-3.5 h-3.5" />
+        </span>
+        <span>Back to Employees Directory</span>
       </button>
 
-      {/* Header Profile Card */}
-      <div className="glass-panel p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 border-l-4 border-indigo-500">
-        <div className="flex items-center gap-5">
-          <div className="w-20 h-20 rounded-2xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center font-extrabold text-2xl border border-indigo-500/30 overflow-hidden">
-            {employee.avatarUrl ? (
-              <img
-                src={employee.avatarUrl}
-                alt={employee.firstName}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              `${employee.firstName[0]}${employee.lastName[0]}`
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-white">
-                {employee.firstName} {employee.lastName}
-              </h1>
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${employee.status === 'ACTIVE'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                  }`}
-              >
-                {employee.status}
-              </span>
-            </div>
-            <p className="text-sm text-slate-300 mt-1">{employee.position}</p>
-            <p className="text-xs font-mono text-indigo-400 mt-0.5">{employee.employeeCode}</p>
-          </div>
-        </div>
+      {/* 2. Hero Profile Glass Card (Stitch Elena Rostova Profile Design) */}
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 glass-panel border border-white/10 shadow-glass">
+        {/* Subtle background flare */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-indigo-600/15 via-violet-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-        {canEdit && (
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            id="btn-edit-employee"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs transition border border-slate-700"
-          >
-            <Edit className="w-4 h-4 text-indigo-400" />
-            {isSelf ? 'Edit My Contact Info' : 'Edit Employee'}
-          </button>
-        )}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            {/* Avatar */}
+            <div className="relative">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 text-white flex items-center justify-center font-extrabold text-2xl sm:text-3xl border border-white/20 shadow-glow-primary overflow-hidden">
+                {employee.avatarUrl ? (
+                  <img
+                    src={employee.avatarUrl}
+                    alt={employee.firstName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  `${employee.firstName?.[0] || ''}${employee.lastName?.[0] || ''}`
+                )}
+              </div>
+              <span
+                className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ring-4 ring-surface-lowest flex items-center justify-center ${
+                  employee.status === 'ACTIVE' ? 'bg-emerald-400' : 'bg-amber-400'
+                }`}
+                title={employee.status}
+              />
+            </div>
+
+            {/* Profile Info */}
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                  {employee.firstName} {employee.lastName}
+                </h1>
+                <Badge
+                  variant={
+                    employee.status === 'ACTIVE'
+                      ? 'success'
+                      : employee.status === 'TERMINATED'
+                      ? 'danger'
+                      : 'warning'
+                  }
+                  dot
+                >
+                  {employee.status}
+                </Badge>
+              </div>
+
+              <p className="text-sm sm:text-base font-medium text-indigo-300">
+                {employee.position}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 text-xs text-on-surface-variant pt-1 font-mono">
+                <span className="px-2 py-0.5 rounded-md bg-surface-high border border-white/10 text-indigo-300 font-bold">
+                  {employee.employeeCode}
+                </span>
+                <span>•</span>
+                <span>{employee.departmentId?.name || 'Unassigned Division'}</span>
+                <span>•</span>
+                <span className="flex items-center gap-1 text-slate-300">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  {employee.email}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Action Button */}
+          {canEdit && (
+            <Button
+              onClick={() => setIsEditModalOpen(true)}
+              id="btn-edit-employee"
+              variant="secondary"
+              icon={<Edit className="w-4 h-4 text-indigo-400" />}
+            >
+              {isSelf ? 'Edit My Contact Info' : 'Edit Employee Record'}
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Detail Tabs Header */}
-      <div className="flex border-b border-slate-800 gap-6 text-xs font-semibold">
+      {/* 3. Detail Tabs Header */}
+      <div className="flex border-b border-white/10 gap-6 text-xs sm:text-sm font-semibold overflow-x-auto">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`pb-3 transition relative ${activeTab === 'overview'
+          className={`pb-3 transition relative shrink-0 ${
+            activeTab === 'overview'
               ? 'text-indigo-400 border-b-2 border-indigo-500'
               : 'text-slate-400 hover:text-slate-200'
-            }`}
+          }`}
         >
           Overview & Organization
         </button>
 
         <button
           onClick={() => setActiveTab('contact')}
-          className={`pb-3 transition relative ${activeTab === 'contact'
+          className={`pb-3 transition relative shrink-0 ${
+            activeTab === 'contact'
               ? 'text-indigo-400 border-b-2 border-indigo-500'
               : 'text-slate-400 hover:text-slate-200'
-            }`}
+          }`}
         >
           Contact & Emergency
         </button>
@@ -209,308 +260,300 @@ export const EmployeeDetailPage: React.FC = () => {
         {(isSelf || can(Permission.PAYROLL_READ_ALL)) && (
           <button
             onClick={() => setActiveTab('compensation')}
-            className={`pb-3 transition relative ${activeTab === 'compensation'
+            className={`pb-3 transition relative shrink-0 ${
+              activeTab === 'compensation'
                 ? 'text-indigo-400 border-b-2 border-indigo-500'
                 : 'text-slate-400 hover:text-slate-200'
-              }`}
+            }`}
           >
             Compensation & Salary
           </button>
         )}
       </div>
 
-      {/* Tab 1: Overview */}
+      {/* 4. Tab 1: Overview & Organization */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="glass-panel p-6 rounded-2xl space-y-4">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Card>
+            <CardHeader className="flex items-center gap-2">
               <Briefcase className="w-4 h-4 text-indigo-400" />
-              Organizational Hierarchy
-            </h2>
-            <div className="divide-y divide-slate-800/80 text-xs">
-              <div className="py-2.5 flex justify-between">
+              <div>
+                <CardTitle>Organizational Hierarchy</CardTitle>
+                <CardDescription>Department assignment and reporting structure</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="divide-y divide-white/5 text-xs sm:text-sm pt-0">
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Department</span>
-                <span className="text-slate-200 font-semibold">
+                <span className="text-white font-semibold">
                   {employee.departmentId?.name || 'Unassigned'}
                 </span>
               </div>
-              <div className="py-2.5 flex justify-between">
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Department Code</span>
-                <span className="text-slate-200 font-mono">
+                <span className="text-white font-mono">
                   {employee.departmentId?.code || 'N/A'}
                 </span>
               </div>
-              <div className="py-2.5 flex justify-between">
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Reporting Manager</span>
-                <span className="text-slate-200 font-semibold">
+                <span className="text-white font-semibold">
                   {employee.managerId
                     ? `${employee.managerId.firstName} ${employee.managerId.lastName}`
-                    : 'None / Executive'}
+                    : 'None / Executive Direct'}
                 </span>
               </div>
-              <div className="py-2.5 flex justify-between">
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Date of Joining</span>
-                <span className="text-slate-200 font-semibold">{employee.joiningDate}</span>
+                <span className="text-white font-mono">{employee.joiningDate}</span>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="glass-panel p-6 rounded-2xl space-y-4">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Card>
+            <CardHeader className="flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-emerald-400" />
-              Account Status
-            </h2>
-            <div className="divide-y divide-slate-800/80 text-xs">
-              <div className="py-2.5 flex justify-between">
-                <span className="text-slate-400">Employment Status</span>
-                <span className="text-emerald-400 font-bold">{employee.status}</span>
+              <div>
+                <CardTitle>Employment & Security</CardTitle>
+                <CardDescription>Verification level and access credentials</CardDescription>
               </div>
-              <div className="py-2.5 flex justify-between">
+            </CardHeader>
+            <CardContent className="divide-y divide-white/5 text-xs sm:text-sm pt-0">
+              <div className="py-3 flex justify-between">
+                <span className="text-slate-400">Employment Status</span>
+                <Badge variant="success" dot>
+                  {employee.status}
+                </Badge>
+              </div>
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Portal User Account</span>
                 <span className="text-slate-200">
-                  {employee.userId ? 'Activated (Credentials Issued)' : 'No Account Linked'}
+                  {employee.userId ? 'Activated (SSO & Credentials)' : 'No Account Linked'}
                 </span>
               </div>
-              <div className="py-2.5 flex justify-between">
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Record Created</span>
-                <span className="text-slate-200">
+                <span className="text-slate-200 font-mono">
                   {new Date(employee.createdAt).toLocaleDateString()}
                 </span>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {/* Tab 2: Contact & Emergency */}
+      {/* 5. Tab 2: Contact & Emergency */}
       {activeTab === 'contact' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="glass-panel p-6 rounded-2xl space-y-4">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Mail className="w-4 h-4 text-sky-400" />
-              Contact Details
-            </h2>
-            <div className="divide-y divide-slate-800/80 text-xs">
-              <div className="py-2.5 flex justify-between">
-                <span className="text-slate-400">Work Email</span>
-                <span className="text-slate-200 font-semibold">{employee.email}</span>
+          <Card>
+            <CardHeader className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-indigo-400" />
+              <div>
+                <CardTitle>Contact Details</CardTitle>
+                <CardDescription>Primary work channels</CardDescription>
               </div>
-              <div className="py-2.5 flex justify-between">
+            </CardHeader>
+            <CardContent className="divide-y divide-white/5 text-xs sm:text-sm pt-0">
+              <div className="py-3 flex justify-between">
+                <span className="text-slate-400">Work Email</span>
+                <span className="text-white font-mono font-medium">{employee.email}</span>
+              </div>
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Phone Number</span>
-                <span className="text-slate-200 font-semibold">
+                <span className="text-white font-mono font-medium">
                   {employee.phone || 'Not provided'}
                 </span>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="glass-panel p-6 rounded-2xl space-y-4">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Card>
+            <CardHeader className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-amber-400" />
-              Emergency Contact
-            </h2>
-            <div className="divide-y divide-slate-800/80 text-xs">
-              <div className="py-2.5 flex justify-between">
+              <div>
+                <CardTitle>Emergency Contact</CardTitle>
+                <CardDescription>Designated point of contact</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="divide-y divide-white/5 text-xs sm:text-sm pt-0">
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Contact Name</span>
-                <span className="text-slate-200 font-semibold">
+                <span className="text-white font-medium">
                   {employee.emergencyContact?.name || 'Not provided'}
                 </span>
               </div>
-              <div className="py-2.5 flex justify-between">
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Relationship</span>
-                <span className="text-slate-200 font-semibold">
+                <span className="text-white font-medium">
                   {employee.emergencyContact?.relationship || 'Not provided'}
                 </span>
               </div>
-              <div className="py-2.5 flex justify-between">
+              <div className="py-3 flex justify-between">
                 <span className="text-slate-400">Emergency Phone</span>
-                <span className="text-slate-200 font-semibold">
+                <span className="text-white font-mono font-medium">
                   {employee.emergencyContact?.phone || 'Not provided'}
                 </span>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {/* Tab 3: Compensation */}
+      {/* 6. Tab 3: Compensation & Salary */}
       {activeTab === 'compensation' && (isSelf || can(Permission.PAYROLL_READ_ALL)) && (
-        <div className="glass-panel p-6 rounded-2xl space-y-4 max-w-xl">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+        <Card className="max-w-xl">
+          <CardHeader className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-emerald-400" />
-            Monthly Salary Breakdown
-          </h2>
-
-          <div className="divide-y divide-slate-800/80 text-xs">
-            <div className="py-2.5 flex justify-between">
+            <div>
+              <CardTitle>Monthly Compensation Breakdown</CardTitle>
+              <CardDescription>Base salary, statutory allowances, and net pay</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="divide-y divide-white/5 text-xs sm:text-sm pt-0">
+            <div className="py-3 flex justify-between">
               <span className="text-slate-400">Basic Salary</span>
-              <span className="text-slate-200 font-semibold font-mono">
-                ${employee.salary?.basic || 0}
+              <span className="text-white font-semibold font-mono">
+                ${(employee.salary?.basic || 0).toLocaleString()}
               </span>
             </div>
-            <div className="py-2.5 flex justify-between">
+            <div className="py-3 flex justify-between">
               <span className="text-slate-400">House Rent Allowance (HRA)</span>
-              <span className="text-slate-200 font-semibold font-mono">
-                ${employee.salary?.hra || 0}
+              <span className="text-white font-semibold font-mono">
+                ${(employee.salary?.hra || 0).toLocaleString()}
               </span>
             </div>
-            <div className="py-2.5 flex justify-between">
+            <div className="py-3 flex justify-between">
               <span className="text-slate-400">Special Allowances</span>
-              <span className="text-slate-200 font-semibold font-mono">
-                ${employee.salary?.allowances || 0}
+              <span className="text-white font-semibold font-mono">
+                ${(employee.salary?.allowances || 0).toLocaleString()}
               </span>
             </div>
-            <div className="py-2.5 flex justify-between">
+            <div className="py-3 flex justify-between">
               <span className="text-slate-400">Deductions</span>
               <span className="text-rose-400 font-semibold font-mono">
-                -${employee.salary?.deductions || 0}
+                -${(employee.salary?.deductions || 0).toLocaleString()}
               </span>
             </div>
-            <div className="py-3 flex justify-between border-t border-slate-700 text-sm font-bold">
+            <div className="py-3.5 flex justify-between border-t border-white/10 text-base font-bold bg-surface-high/40 px-3 rounded-xl mt-2">
               <span className="text-white">Estimated Net Monthly</span>
               <span className="text-emerald-400 font-mono">
                 $
-                {(employee.salary?.basic || 0) +
+                {(
+                  (employee.salary?.basic || 0) +
                   (employee.salary?.hra || 0) +
                   (employee.salary?.allowances || 0) -
-                  (employee.salary?.deductions || 0)}
+                  (employee.salary?.deductions || 0)
+                ).toLocaleString()}
               </span>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Edit Modal */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-lg rounded-2xl p-6 space-y-5 border border-slate-700 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-lg font-bold text-white">
-                {isSelf ? 'Update Contact Information' : 'Update Employee Record'}
-              </h2>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* 7. Edit Modal Dialog */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title={isSelf ? 'Update Contact Information' : 'Update Employee Record'}
+        description="Update personal contact information, emergency lines, or administrative role attributes."
+        maxWidth="lg"
+      >
+        {editError && (
+          <div className="p-3.5 mb-5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{editError}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleUpdate} className="space-y-4">
+          <Input
+            label="Phone Number"
+            id="input-edit-phone"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            placeholder="+1-555-0192"
+            icon={<Phone className="w-4 h-4" />}
+          />
+
+          <div className="pt-3 border-t border-white/10 space-y-3">
+            <p className="font-bold text-slate-300 uppercase tracking-wider text-[10px] font-mono">
+              Emergency Contact
+            </p>
+            <Input
+              label="Contact Name"
+              id="input-edit-emergency-name"
+              value={formData.emergencyName}
+              onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
+              placeholder="e.g. John Rostova"
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Relationship"
+                id="input-edit-emergency-relationship"
+                value={formData.emergencyRelationship}
+                onChange={(e) =>
+                  setFormData({ ...formData, emergencyRelationship: e.target.value })
+                }
+                placeholder="e.g. Spouse"
+              />
+              <Input
+                label="Emergency Phone"
+                id="input-edit-emergency-phone"
+                value={formData.emergencyPhone}
+                onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
+                placeholder="+1-555-0199"
+              />
             </div>
-
-            {editError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{editError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleUpdate} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Phone Number</label>
-                <input
-                  type="text"
-                  id="input-edit-phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                />
-              </div>
-
-              <div className="pt-2 border-t border-slate-800 space-y-3">
-                <p className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">
-                  Emergency Contact
-                </p>
-                <div>
-                  <label className="block font-semibold text-slate-400 mb-1">Contact Name</label>
-                  <input
-                    type="text"
-                    id="input-edit-emergency-name"
-                    value={formData.emergencyName}
-                    onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-slate-400 mb-1">Relationship</label>
-                    <input
-                      type="text"
-                      id="input-edit-emergency-relationship"
-                      placeholder="e.g. Spouse, Parent"
-                      value={formData.emergencyRelationship}
-                      onChange={(e) =>
-                        setFormData({ ...formData, emergencyRelationship: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-400 mb-1">Emergency Phone</label>
-                    <input
-                      type="text"
-                      id="input-edit-emergency-phone"
-                      value={formData.emergencyPhone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, emergencyPhone: e.target.value })
-                      }
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {!isSelf && (user?.role === UserRole.ADMIN || user?.role === UserRole.HR) && (
-                <div className="pt-2 border-t border-slate-800 space-y-3">
-                  <p className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">
-                    Management Controls
-                  </p>
-                  <div>
-                    <label className="block font-semibold text-slate-400 mb-1">Position</label>
-                    <input
-                      type="text"
-                      id="input-edit-position"
-                      value={formData.position}
-                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-400 mb-1">Status</label>
-                    <select
-                      value={formData.status}
-                      id="select-edit-status"
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    >
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="PROBATION">PROBATION</option>
-                      <option value="NOTICE">NOTICE</option>
-                      <option value="TERMINATED">TERMINATED</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  id="btn-submit-edit-employee"
-                  disabled={editLoading}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold"
-                >
-                  {editLoading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+
+          {!isSelf && (user?.role === UserRole.ADMIN || user?.role === UserRole.HR) && (
+            <div className="pt-3 border-t border-white/10 space-y-3">
+              <p className="font-bold text-indigo-400 uppercase tracking-wider text-[10px] font-mono">
+                Management Governance
+              </p>
+              <Input
+                label="Position / Title"
+                id="input-edit-position"
+                value={formData.position}
+                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+              />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Employment Status
+                </label>
+                <select
+                  value={formData.status}
+                  id="select-edit-status"
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="glass-input block w-full px-3.5 py-2.5 rounded-xl text-sm text-slate-100 cursor-pointer focus:outline-none"
+                >
+                  <option value="ACTIVE" className="bg-[#0f2035]">
+                    ACTIVE
+                  </option>
+                  <option value="PROBATION" className="bg-[#0f2035]">
+                    PROBATION
+                  </option>
+                  <option value="NOTICE" className="bg-[#0f2035]">
+                    NOTICE
+                  </option>
+                  <option value="TERMINATED" className="bg-[#0f2035]">
+                    TERMINATED
+                  </option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div className="pt-4 flex items-center justify-end gap-3 border-t border-white/10">
+            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" id="btn-submit-edit-employee" variant="primary" isLoading={editLoading}>
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

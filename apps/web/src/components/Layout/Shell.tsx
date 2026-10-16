@@ -23,11 +23,11 @@ export const Shell: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col lg:flex-row w-full overflow-x-hidden">
+    <div className="min-h-screen bg-background text-on-surface flex flex-col lg:flex-row w-full overflow-x-hidden">
       <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen((prev) => !prev)} />
       <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
         <Header onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
-        <main className="flex-1 p-3.5 sm:p-6 md:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+        <main className="flex-1 p-3.5 sm:p-6 md:p-8 max-w-[1600px] w-full mx-auto overflow-y-auto">
           <Outlet />
         </main>
       </div>
